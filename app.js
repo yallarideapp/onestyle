@@ -6,7 +6,7 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const data=window.ONE_STYLE_DATA;
   let stored={}; try{stored=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch{}
-  let lang=stored.lang==='en'?'en':'ar';
+  let lang=stored.lang==='ar'?'ar':'en';
   const cfg=window.OneStyleConfig;
   let settings=cfg.clone(cfg.defaults);
   try{settings=cfg.normalizeSettings(stored.settings||{},settings);}catch{}
