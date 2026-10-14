@@ -112,8 +112,7 @@
 .hero-device>.screen-off.is-on{opacity:0}
 @keyframes hero-device-in{from{opacity:0;translate:0 18px;scale:.97}}
 .hero-device.device-enter>.device-photo{animation:hero-device-in .6s cubic-bezier(.2,.75,.25,1) both}
-@media(max-width:780px){.hero-switch{top:2px;bottom:auto;gap:2px;padding:4px}.hero-switch button{padding:7px 11px;font-size:12px;min-height:34px}.hero-visual{height:357px}.hero-device{top:62px}}
-@media(max-width:370px){.hero-visual{height:332px}.hero-device{top:54px}}
+@media(max-width:780px){.hero-switch{bottom:4px;gap:2px;padding:4px}.hero-switch button{padding:7px 11px;font-size:12px;min-height:34px}}
 @media(prefers-reduced-motion:reduce){.hero-device.device-enter>.device-photo{animation:none}.hero-device.is-leaving>*{transition:none}}
 
 /* 2026-10-14: AirPods earbuds rise out of the case in the hero. */
@@ -124,5 +123,6 @@
 .pods-bud{position:absolute;display:block;max-width:none;will-change:transform}
 @keyframes pods-in{from{opacity:0}}
 
-/* 2026-10-14: on phones the line above the hero heading is hidden so more of the device shows. */
-@media(max-width:780px){.hero-copy>.eyebrow{display:none}.hero-copy>h1{margin-top:0}}
+/* 2026-10-14: on phones the hero fits on one screen: no line above the heading, no description, and the device switcher sits under the device. The device height follows the screen height. */
+@media(max-width:780px){.hero{padding-top:16px}.hero-copy>.eyebrow,.hero-copy>p{display:none}.hero .hero-copy>h1{margin-top:0;margin-bottom:14px;line-height:1.2}html[dir=ltr] .hero .hero-copy>h1{font-size:calc(40px * var(--type-scale,1))}.hero-buttons{margin-top:0}.hero .hero-device{top:4px;height:200px;height:clamp(170px,calc(100svh - 468px),260px)}.hero .hero-visual{height:262px;height:calc(clamp(170px,calc(100svh - 468px),260px) + 62px)}.hero .hero-orbit{top:0;width:250px;height:250px;width:calc(clamp(170px,calc(100svh - 468px),260px) + 50px);height:calc(clamp(170px,calc(100svh - 468px),260px) + 50px)}}
+@media(max-width:370px){html[dir=ltr] .hero .hero-copy>h1{font-size:calc(36px * var(--type-scale,1))}}
