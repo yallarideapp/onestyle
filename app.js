@@ -98,7 +98,7 @@
   // Home hero: the laptop opens once on first load (2026-10-14). The photo is split into a still base and a lid that turns on the hinge.
   const heroRig={base:'assets/photos/hero-laptop-base.webp',lid:'assets/photos/hero-laptop-lid.webp',off:'assets/photos/hero-laptop-lid-off.webp',crop:[146,36,1124,698],size:[1536,1024],open:[[144.2,88.6],[1015.4,36.4]],hinge:[[221.5,698.4],[1120.1,605.7]],closed:[[435.5,950.1],[1458.9,807]],angle:110};
   let heroIntroPlayed=false;
-  const heroRigWanted=()=>!settings.hero.image&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const heroRigWanted=()=>!settings.hero.image&&imageFor('macbook')===cfg.defaults.media.macbook&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
   function homography(src,dst){const A=[],b=[];for(let i=0;i<4;i++){const [x,y]=src[i],[u,v]=dst[i];A.push([x,y,1,0,0,0,-u*x,-u*y]);b.push(u);A.push([0,0,0,x,y,1,-v*x,-v*y]);b.push(v);}for(let c=0;c<8;c++){let p=c;for(let r=c+1;r<8;r++)if(Math.abs(A[r][c])>Math.abs(A[p][c]))p=r;[A[c],A[p]]=[A[p],A[c]];[b[c],b[p]]=[b[p],b[c]];for(let r=0;r<8;r++){if(r===c)continue;const f=A[r][c]/A[c][c];for(let k=c;k<8;k++)A[r][k]-=f*A[c][k];b[r]-=f*b[c];}}return b.map((v,i)=>v/A[i][i]);}
   function playHeroLaptop(){
     const device=document.querySelector('.hero-device.rig-pending');if(!device)return;
