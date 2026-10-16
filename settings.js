@@ -56,12 +56,14 @@
   function normalizeProduct(patch,existing){
     if(!plain(patch)||!existing)throw Error('Invalid product');
     const next=clone(existing);
-    const keys=['name','descriptionAr','descriptionEn','category','chip','cpu','ram','storage','screen','network','basePrice','price','offerPrice','availability','hidden','image','colors','ramOptions','storageOptions'];
+    const keys=['name','descriptionAr','descriptionEn','category','chip','cpu','ram','storage','screen','network','batteryHours','batteryUse','basePrice','price','offerPrice','availability','hidden','image','colors','ramOptions','storageOptions'];
     for(const [key,value] of Object.entries(patch)){
       if(!keys.includes(key))throw Error('Unknown product field');
       if(key==='basePrice'||key==='price'){if(!Number.isFinite(value)||value<=0||value>100000)throw Error('Invalid price');next.basePrice=Math.round(value*100)/100;continue;}
       if(key==='offerPrice'){if(value===null||value===''){delete next.offerPrice;continue;}if(!Number.isFinite(value)||value<=0||value>100000)throw Error('Invalid offer');const offer=Math.round(value*100)/100;if(offer<.01)throw Error('Invalid offer');next.offerPrice=offer;continue;}
-      if(key==='hidden'){if(typeof value!=='boolean')throw Error('Invalid visibility');}
+      if(key==='batteryHours'){if(value!==null&&(!Number.isFinite(value)||value<=0||value>1000))throw Error('Invalid battery hours');next.batteryHours=value;continue;}
+      if(key==='batteryUse'){if(!['web','video','listening','mixed','none'].includes(value))throw Error('Invalid battery usage');}
+      else if(key==='hidden'){if(typeof value!=='boolean')throw Error('Invalid visibility');}
       else if(key==='availability'){if(!['demo','available','on-order','unavailable'].includes(value))throw Error('Invalid stock');}
       else if(key==='category'){if(!['mac','iphone','ipad','audio','watch','accessories'].includes(value))throw Error('Invalid category');}
       else if(key==='image'){if(!imageSource(value))throw Error('Invalid image');}
@@ -71,6 +73,7 @@
       next[key]=typeof value==='string'?value.trim():clone(value);
     }
     if(Object.hasOwn(next,'offerPrice')&&!(next.offerPrice<next.basePrice))throw Error('Offer must be below the price');
+    if(next.batteryUse==='none')next.batteryHours=null;
     const categoryArt={mac:'macbook',iphone:'iphone',ipad:'ipad',audio:'airpods',watch:'watch',accessories:'accessories'};
     next.art=categoryArt[next.category];next.demo=true;
     if(Array.isArray(next.ramOptions)&&next.ramOptions.length)next.ram=`${next.ramOptions[0]} GB`;
