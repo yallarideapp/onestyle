@@ -1,6 +1,6 @@
 ---
 name: cloudflare-free-backend
-description: Use when Jafar asks to take one of his sites live on Cloudflare's free plan (Workers + D1 + KV) instead of Hostinger: real orders, admin edits shared by everyone, uploaded photos, no card, deployed from GitHub on every push.
+description: "Use when Jafar asks to take one of his sites live on Cloudflare's free plan (Workers + D1 + KV) instead of Hostinger: real orders, admin edits shared by everyone, uploaded photos, no card, deployed from GitHub on every push."
 ---
 
 # Free live backend on Cloudflare (Workers + D1 + KV)
