@@ -67,6 +67,46 @@ body{font-size:var(--body-font)}
 
 .battery-note{font-size:12px;margin-top:12px;max-width:800px}
 
+/* Device screen artwork shares the photo's fitted coordinate space. */
+.device-image{display:block;position:relative;width:100%;height:100%;min-width:0}
+.device-image>.device-photo{width:100%;height:100%;object-fit:contain}
+.device-image>.device-screen{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.product-art>.device-image{height:238px;transition:transform .35s}
+.product-card:hover .product-art>.device-image{transform:scale(1.03)}
+.hero-device>.device-image{width:100%;height:100%;filter:drop-shadow(0 15px 13px #293a4915)}
+.hero-device.await-screen>.device-image{visibility:hidden}
+.device-image>.screen-off{position:absolute;inset:0;z-index:2;transition:opacity .55s ease}
+.device-image>.screen-off.is-on{opacity:0}
+.hero-device.device-enter>.device-image{animation:hero-device-in .6s cubic-bezier(.2,.75,.25,1) both}
+.rig-back>.rig-back-logo{position:absolute;left:44%;top:40%;width:9%;height:16%;fill:#45484d;opacity:.85;transform:scaleY(-1)}
+.category-composition{position:relative;display:block;width:100%;height:100%;direction:ltr}
+.category-composition>span{position:absolute;top:0;height:100%;width:68%}
+.category-phone-back{left:-2%;transform:rotate(-7deg)}
+.category-phone-front{right:-2%;transform:rotate(4deg)}
+.category-composition .device-photo{padding:0;width:100%;height:100%;object-fit:contain}
+.category-watches>.device-photo{position:absolute;top:0;width:70%;height:100%}
+.category-watch-standard{left:-8%;transform:rotate(-6deg)}
+.category-watch-ultra{right:-8%;transform:rotate(6deg)}
+.product-badges{position:absolute;top:21px;inset-inline-end:23px;display:flex;flex-direction:column;align-items:flex-end;gap:5px;z-index:2;max-width:50%}
+.condition-badge{display:inline-block;max-width:100%;padding:4px 9px;border-radius:999px;font-size:11px;line-height:1.35;font-weight:700;text-align:center}
+.condition-new{background:#e4efe9;color:#245c43;border:1px solid #bdd8c8}
+.condition-used{background:#edf0f7;color:#374d78;border:1px solid #cdd6e8}
+.product-badges .offer-badge{position:static;font-size:11px;padding:4px 9px}
+.detail-condition{margin-top:12px}
+@media(max-width:1100px){.product-art>.device-image{height:205px}}
+@media(max-width:780px){
+  .product-art>.device-image{height:137px}
+  .guide-result-grid .product-art>.device-image{height:275px;padding:10px 5px}
+  .product-badges{top:12px;inset-inline-end:11px;gap:4px}
+  .product-badges .condition-badge,.product-badges .offer-badge{font-size:9px;padding:3px 6px}
+}
+@media(max-width:370px){.product-art>.device-image{height:118px}.product-badges .condition-badge{font-size:8px}}
+@media(prefers-reduced-motion:reduce){
+  .product-art>.device-image,.device-image>.screen-off{transition:none}
+  .product-card:hover .product-art>.device-image{transform:none}
+  .hero-device.device-enter>.device-image{animation:none}
+}
+
 /* Show the complete comparison on phones with compact text-only headers. */
 @media(max-width:780px){
   .compare-page .page-heading{padding:24px 0 18px}

@@ -2,6 +2,20 @@
 (() => {
   'use strict';
   const data=window.ONE_STYLE_DATA;
+  const categories=[
+    {id:'mac',labelAr:'MacBook',labelEn:'MacBook',art:'macbook'},
+    {id:'iphone',labelAr:'iPhone',labelEn:'iPhone',art:'iphone'},
+    {id:'ipad',labelAr:'iPad',labelEn:'iPad',art:'ipad'},
+    {id:'audio',labelAr:'AirPods',labelEn:'AirPods',art:'airpods'},
+    {id:'watch',labelAr:'Watch',labelEn:'Watch',art:'watch'},
+    {id:'accessories',labelAr:'الإكسسوارات',labelEn:'Accessories',art:'accessories'}
+  ];
+  const conditions=[
+    {id:'new',labelAr:'جديد',labelEn:'New'},
+    {id:'used-like-new',labelAr:'مستعمل — كالجديد',labelEn:'Used — Like New'}
+  ];
+  const categoryLabel=(id,lang='en')=>{const category=categories.find(c=>c.id===id);return category?category[lang==='ar'?'labelAr':'labelEn']:id;};
+  const conditionLabel=(condition,lang='en')=>(conditions.find(c=>c.id===condition)||conditions[0])[lang==='ar'?'labelAr':'labelEn'];
   const clone=value=>JSON.parse(JSON.stringify(value));
   const defaults={
     brand:{...data.brand,taglineAr:'بيع وصيانة أجهزة Apple',taglineEn:'Apple device sales & service',logoImage:''},
@@ -56,7 +70,8 @@
   function normalizeProduct(patch,existing){
     if(!plain(patch)||!existing)throw Error('Invalid product');
     const next=clone(existing);
-    const keys=['name','descriptionAr','descriptionEn','category','chip','cpu','ram','storage','screen','network','batteryHours','batteryUse','basePrice','price','offerPrice','availability','hidden','image','colors','ramOptions','storageOptions'];
+    if(!Object.hasOwn(next,'condition'))next.condition='new';
+    const keys=['name','descriptionAr','descriptionEn','category','condition','chip','cpu','ram','storage','screen','network','batteryHours','batteryUse','basePrice','price','offerPrice','availability','hidden','image','colors','ramOptions','storageOptions'];
     for(const [key,value] of Object.entries(patch)){
       if(!keys.includes(key))throw Error('Unknown product field');
       if(key==='basePrice'||key==='price'){if(!Number.isFinite(value)||value<=0||value>100000)throw Error('Invalid price');next.basePrice=Math.round(value*100)/100;continue;}
@@ -65,7 +80,8 @@
       if(key==='batteryUse'){if(!['web','video','listening','mixed','none'].includes(value))throw Error('Invalid battery usage');}
       else if(key==='hidden'){if(typeof value!=='boolean')throw Error('Invalid visibility');}
       else if(key==='availability'){if(!['demo','available','on-order','unavailable'].includes(value))throw Error('Invalid stock');}
-      else if(key==='category'){if(!['mac','iphone','ipad','audio','watch','accessories'].includes(value))throw Error('Invalid category');}
+      else if(key==='category'){if(!categories.some(category=>category.id===value))throw Error('Invalid category');}
+      else if(key==='condition'){if(!conditions.some(condition=>condition.id===value))throw Error('Invalid condition');}
       else if(key==='image'){if(!imageSource(value))throw Error('Invalid image');}
       else if(key==='colors'){if(!Array.isArray(value)||value.length<1||value.length>12||value.some(c=>!plain(c)||typeof c.name!=='string'||!c.name.trim()||c.name.length>70||!color(c.hex)))throw Error('Invalid finishes');}
       else if(key==='ramOptions'||key==='storageOptions'){if(!Array.isArray(value)||value.length>12||value.some(n=>!Number.isInteger(n)||n<=0||n>8192)||new Set(value).size!==value.length)throw Error('Invalid configurations');}
@@ -73,14 +89,14 @@
       next[key]=typeof value==='string'?value.trim():clone(value);
     }
     if(Object.hasOwn(next,'offerPrice')&&!(next.offerPrice<next.basePrice))throw Error('Offer must be below the price');
+    if(!conditions.some(condition=>condition.id===next.condition))throw Error('Invalid condition');
     if(next.batteryUse==='none')next.batteryHours=null;
-    const categoryArt={mac:'macbook',iphone:'iphone',ipad:'ipad',audio:'airpods',watch:'watch',accessories:'accessories'};
-    next.art=categoryArt[next.category];next.demo=true;
+    next.art=categories.find(category=>category.id===next.category)?.art;next.demo=true;
     if(Array.isArray(next.ramOptions)&&next.ramOptions.length)next.ram=`${next.ramOptions[0]} GB`;
     if(Array.isArray(next.storageOptions)&&next.storageOptions.length)next.storage=next.storageOptions[0]===1024?'1 TB':`${next.storageOptions[0]} GB`;
     if(Array.isArray(next.ramOptions)&&!next.ramOptions.length)delete next.ramOptions;
     if(Array.isArray(next.storageOptions)&&!next.storageOptions.length)delete next.storageOptions;
     return next;
   }
-  window.OneStyleConfig={defaults,normalizeSettings,normalizeProduct,imageSource,clone};
+  window.OneStyleConfig={defaults,categories,conditions,categoryLabel,conditionLabel,normalizeSettings,normalizeProduct,imageSource,clone};
 })();

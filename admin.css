@@ -16,3 +16,6 @@
 .admin-cat-tab.active span{background:#11233b;color:#e9f1ff}
 .admin-cat-tab:focus-visible{outline:2px solid var(--admin-accent);outline-offset:2px}
 .admin-cat-empty{border:1px dashed var(--admin-border);border-radius:12px;padding:22px;color:var(--admin-muted);font-size:13px;margin:0 0 20px}
+
+.admin-condition{display:inline-block;padding:4px 8px;margin:2px 0 7px;border:1px solid #3c526a;border-radius:999px;font-size:10px;line-height:1.5;color:#b6d6f6;background:#1e2b39}
+.admin-condition-used-like-new{color:#bde3c8;background:#1d3229;border-color:#3f6150}
