@@ -27,7 +27,7 @@
     guide:{titleAr:'خلّينا نختارها سوا.',titleEn:'Let’s find your fit.',descriptionAr:'سؤالين. خيارات أوضح.',descriptionEn:'Two questions. A clearer choice.'},
     nav:{homeAr:'الرئيسية',homeEn:'Home',shopAr:'تسوّق الأجهزة',shopEn:'Shop devices',guideAr:'اختَر جهازك',guideEn:'Find your Mac',serviceAr:'الصيانة والدعم',serviceEn:'Service & support',bagAr:'السلة',bagEn:'Bag'},
     footer:{descriptionAr:'أجهزتك، إكسسواراتك، وخطوتك الجاية.',descriptionEn:'Your devices, your essentials, your next move.'},
-    checkout:{ammanFee:0,otherFee:5},
+    checkout:{ammanFee:0,otherFee:5,ordersOn:false},
     media:{macbook:'assets/photos/macbook-studio.webp',iphone:'assets/photos/iphone-studio.webp',ipad:'assets/photos/ipad-studio.webp',airpods:'assets/photos/airpods-studio.webp',watch:'assets/photos/watch-studio.webp',accessories:'assets/photos/accessories-studio.webp'},
     pageTitles:{homeAr:'أجهزة Apple على ذوقك',homeEn:'Your next device',shopAr:'الأجهزة',shopEn:'Shop devices',guideAr:'اختَر جهازك',guideEn:'Find your Mac'},
     categories:{}
@@ -39,6 +39,7 @@
     if(value==='')return true;
     if(/^assets\/[a-zA-Z0-9_./%()\-]+$/.test(value)&&!value.split('/').includes('..'))return true;
     if(/^data:image\/(png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(value))return true;
+    if(/^api\/photo\/[a-f0-9]{32}$/.test(value))return true;
     try{const url=new URL(value);return ['https:','http:'].includes(url.protocol)&&!url.username&&!url.password;}catch{return false;}
   }
   function businessURL(value,key){if(value==='')return true;try{const url=new URL(value);if(url.protocol!=='https:'||url.username||url.password)return false;return key==='instagram'?['instagram.com','www.instagram.com'].includes(url.hostname):true;}catch{return false;}}
@@ -114,7 +115,7 @@
       else if(key==='colors'){if(!Array.isArray(value)||value.length<1||value.length>12||value.some(c=>!plain(c)||typeof c.name!=='string'||!c.name.trim()||c.name.length>70||!color(c.hex)))throw Error('Invalid finishes');}
       else if(key==='ramOptions'||key==='storageOptions'){if(!Array.isArray(value)||value.length>12||value.some(n=>!Number.isInteger(n)||n<=0||n>8192)||new Set(value).size!==value.length)throw Error('Invalid configurations');}
       else if(typeof value!=='string'||value.length>3000||(key==='name'&&!value.trim()))throw Error('Invalid product text');
-      next[key]=typeof value==='string'?value.trim():clone(value);
+      next[key]=key==='colors'?value.map(c=>({name:c.name.trim(),hex:c.hex})):typeof value==='string'?value.trim():clone(value);
     }
     if(Object.hasOwn(next,'offerPrice')&&!(next.offerPrice<next.basePrice))throw Error('Offer must be below the price');
     if(!conditions.some(condition=>condition.id===next.condition))throw Error('Invalid condition');
@@ -128,5 +129,27 @@
     if(Array.isArray(next.storageOptions)&&!next.storageOptions.length)delete next.storageOptions;
     return next;
   }
-  window.OneStyleConfig={defaults,categories,conditions,categoryList,categoryLabel,conditionLabel,normalizeSettings,normalizeProduct,imageSource,clone};
+  // Shared by the storefront, the admin and the live server: one place for catalog checks and prices.
+  const productFields=['name','descriptionAr','descriptionEn','category','condition','chip','cpu','ram','storage','screen','network','batteryHours','batteryUse','basePrice','offerPrice','availability','hidden','image','colors','ramOptions','storageOptions'];
+  function productPatch(p){const patch={};for(const key of productFields){if(Object.hasOwn(p,key))patch[key]=clone(p[key]);}patch.ramOptions=p.ramOptions||[];patch.storageOptions=p.storageOptions||[];return patch;}
+  function productTemplate(id){return {id,name:'New device',category:'mac',condition:'new',art:'macbook',chip:'',ram:'',storage:'',screen:'',batteryHours:null,batteryUse:'mixed',basePrice:500,availability:'demo',demo:true,descriptionAr:'',descriptionEn:'',colors:[{name:'Graphite',hex:'#535966'}],use:[]};}
+  function normalizeCatalog(records,categorySettings=defaults){
+    if(!Array.isArray(records)||records.length<1||records.length>100)throw Error('Invalid catalog');
+    const ids=new Set();
+    return records.map(record=>{
+      if(!record||typeof record.id!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/.test(record.id)||['__proto__','constructor','prototype'].includes(record.id)||ids.has(record.id))throw Error('Invalid device ID');
+      ids.add(record.id);const base=data.products.find(p=>p.id===record.id)||productTemplate(record.id);
+      return normalizeProduct(productPatch(record),base,categorySettings);
+    });
+  }
+  const hasOffer=p=>Number.isFinite(p.offerPrice)&&p.offerPrice>0&&p.offerPrice<p.basePrice;
+  const startPrice=p=>hasOffer(p)?p.offerPrice:p.basePrice;
+  // Upgrade prices: 9 JOD per extra GB of memory above the first option, 75 JOD per storage step.
+  function variantExtra(p,choice={}){const ramIncrease=p.ramOptions?(Number(choice.ram)-p.ramOptions[0])*9:0;const storageIndex=p.storageOptions?.indexOf(Number(choice.storage))||0;return Math.max(0,ramIncrease)+Math.max(0,storageIndex)*75;}
+  const unitPrice=(p,choice)=>startPrice(p)+variantExtra(p,choice);
+  const regularPrice=(p,choice)=>p.basePrice+variantExtra(p,choice);
+  const sizeLabel=n=>n>=1024&&n%1024===0?`${n/1024} TB`:`${n} GB`;
+  const configurationText=(p,choice={})=>[p.chip,p.network,choice.ram?`${choice.ram} GB`:null,choice.storage?sizeLabel(choice.storage):p.storage,p.colors[choice.color]?.name].filter(Boolean).join(' · ');
+  const deliveryFee=(settings,fulfilment,city)=>fulfilment==='pickup'?0:city==='Amman'?settings.checkout.ammanFee:settings.checkout.otherFee;
+  window.OneStyleConfig={defaults,categories,conditions,categoryList,categoryLabel,conditionLabel,normalizeSettings,normalizeProduct,imageSource,clone,productFields,productPatch,productTemplate,normalizeCatalog,hasOffer,startPrice,variantExtra,unitPrice,regularPrice,sizeLabel,configurationText,deliveryFee};
 })();
