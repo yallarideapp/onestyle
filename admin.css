@@ -34,3 +34,4 @@
 
 .admin-cat-tab{max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:start}
 .admin-cat-tab span{flex-shrink:0}
+.admin-wa .admin-wa-status{display:flex;align-items:center;gap:7px;margin:-6px 0 18px!important;font-size:13px;font-weight:600;color:var(--admin-muted)}.admin-wa .admin-wa-status[data-on=true]{color:#a8d4bf}.admin-wa .admin-wa-status svg{width:17px;height:17px;flex:none}.admin-wa .admin-edit-grid{padding-top:0}
