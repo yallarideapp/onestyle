@@ -127,3 +127,11 @@ body{font-size:var(--body-font)}
   .compare-table .button{width:100%;padding:8px 4px;font-size:12px;white-space:normal;overflow-wrap:anywhere}
   .compare-table .price-was{display:block;margin-inline-end:0}
 }
+
+/* Make the complete collection easy to find from Explore. */
+.categories-section .section-heading{flex-wrap:wrap}
+.categories-section .explore-all-button{margin:0;min-height:48px;flex-shrink:0}
+@media(max-width:780px){
+  .categories-section .section-heading>div{width:100%}
+  .categories-section .explore-all-button{width:100%;min-height:48px;font-size:14px}
+}
