@@ -135,3 +135,27 @@ body{font-size:var(--body-font)}
   .categories-section .section-heading>div{width:100%}
   .categories-section .explore-all-button{width:100%;min-height:48px;font-size:14px}
 }
+
+/* Keep contact details aligned while isolating Latin numbers and handles. */
+.site-footer .footer-top>div{min-width:0;text-align:start}
+.site-footer .footer-top p{line-height:1.8}
+.site-footer .footer-contact-links{display:grid;justify-items:start;gap:4px;margin-top:10px;min-width:0}
+.site-footer .footer-contact-links a{display:inline-flex;align-items:center;gap:8px;max-width:100%;min-height:32px;margin:0;line-height:1.7}
+.site-footer .footer-contact-links bdi{min-width:0;overflow-wrap:anywhere}
+.footer-external-icon{width:14px;height:14px;flex-shrink:0}
+.site-footer .footer-copyright{unicode-bidi:isolate}
+.site-footer .footer-bottom p{line-height:1.8}
+@media(max-width:780px){
+  .site-footer .footer-top h3{font-size:13px}
+  .site-footer .footer-top p{font-size:11px}
+  .site-footer .footer-top a{font-size:12px}
+  .site-footer .footer-nav a{display:flex;align-items:center;min-height:40px;margin:0}
+  .site-footer .footer-contact-links a{min-height:44px}
+  .site-footer .footer-bottom{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px 20px}
+  .site-footer .footer-copyright{justify-self:start;width:fit-content;max-width:100%}
+  .site-footer .footer-bottom>.text-button{justify-self:end;min-height:44px;text-align:end}
+  .site-footer .footer-bottom>p{grid-column:1/-1;max-width:none;margin:0;font-size:10px;text-align:start}
+}
+@media(max-width:480px){
+  html[dir=rtl] .site-footer .footer-top{grid-template-columns:minmax(0,1fr);gap:26px}
+}
