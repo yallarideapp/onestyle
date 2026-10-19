@@ -194,6 +194,15 @@
     const find = form.querySelector('[data-admin-alert-find]'); if (find) find.hidden = channel !== 'telegram';
     feedback(form,'',false);
   }
+  // Turns Telegram's answer into what to do next.
+  function alertProblem(r) {
+    const reason = String(r && r.reason || '');
+    if (reason==='network') return r.channel==='whatsapp' ? t('ما قدرنا نوصل لـ CallMeBot. تأكد من الإنترنت وجرّب كمان مرة.','Couldn’t reach CallMeBot. Check the connection and try again.') : t('ما قدرنا نوصل لتلغرام. تأكد من الإنترنت، وإذا عندك مانع إعلانات أو VPN وقّفه وجرّب كمان مرة.','Couldn’t reach Telegram. Check the connection; pause any ad blocker or VPN and try again.');
+    if (r.code===401 || r.code===404) return t('التوكن مش صحيح أو انعمله revoke. الصق التوكن الجديد من BotFather، اضغط «جيب الـ Chat ID»، وبعدين حفظ.','The token is wrong or was revoked. Paste the new token from BotFather, press “Find my chat ID”, then Save.');
+    if (/chat not found/i.test(reason)) return t('الـ Chat ID مش صحيح. اضغط «جيب الـ Chat ID» من جديد، وبعدين حفظ.','Wrong chat ID. Press “Find my chat ID” again, then Save.');
+    if (r.code===403) return t('البوت ما بقدر يبعتلك. افتح البوت بتلغرام واضغط Start (أو Restart إذا كنت موقفه).','The bot can’t message you. Open it in Telegram and press Start (or Restart if you blocked it).');
+    return t('تلغرام رفض الرسالة: ','Telegram refused the message: ') + (reason || r.code || '?');
+  }
   function alertActions(event, root) {
     const find = event.target.closest('[data-admin-alert-find]'), test = event.target.closest('[data-admin-alert-test]'), clear = event.target.closest('[data-admin-alert-clear]'), alerts = api().orderAlerts;
     if (!alerts || (!find && !test && !clear)) return false;
@@ -209,9 +218,9 @@
       return true;
     }
     feedback(form,t('جاري الإرسال…','Sending…'),false);
-    alerts.test().then(result => {
+    alerts.test().then(r => {
       button.disabled = false;
-      feedback(form,result==='delivered' ? t('وصلت ✓ شيّك تلغرام.','Delivered ✓ Check Telegram.') : result==='sent' ? t('انبعتت لـ CallMeBot. لازم توصلك على الواتس خلال دقيقة، وإذا ما وصلت راجع الرقم والمفتاح.','Sent to CallMeBot. It should reach your WhatsApp within a minute; if not, check the number and key.') : alerts.get() && alerts.get().channel==='telegram' ? t('ما وصلت. تأكد إنك ضغطت Start على البوت، وإن التوكن والـ Chat ID صح.','Not delivered. Make sure you pressed Start in your bot and the token and chat ID are right.') : t('ما قدرنا نوصل لـ CallMeBot. تأكد من الإنترنت وجرّب كمان مرة.','Couldn’t reach CallMeBot. Check the connection and try again.'),result!=='delivered' && result!=='sent');
+      feedback(form,r.status==='delivered' ? t('وصلت ✓ ','Delivered ✓ ') + (r.bot ? t('من البوت @','from @') + r.bot + '. ' : '') + t('شيّك تلغرام.','Check Telegram.') : r.status==='sent' ? t('انبعتت لـ CallMeBot. لازم توصلك على الواتس خلال دقيقة، وإذا ما وصلت راجع الرقم والمفتاح.','Sent to CallMeBot. It should reach your WhatsApp within a minute; if not, check the number and key.') : alertProblem(r),r.status!=='delivered' && r.status!=='sent');
     });
     return true;
   }
