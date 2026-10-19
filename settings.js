@@ -21,7 +21,7 @@
   const defaults={
     brand:{...data.brand,taglineAr:'بيع وصيانة أجهزة Apple',taglineEn:'Apple device sales & service',logoImage:''},
     theme:{accent:'#2469e8',bg:'#f4f4f1',text:'#16181d',cardBg:'#ffffff',buttonRadius:9,fontSize:15},
-    hero:{eyebrowAr:'متخصصون بأجهزة Apple · عمّان',eyebrowEn:'Apple specialists · Amman',titleAr:'جهازك الجاي.',titleEn:'Your next device.',highlightAr:'اختيارك الصح.',highlightEn:'Your kind of choice.',descriptionAr:'من أول فكرة لآخر مشروع. اكتشف أجهزة الماك، الآيفون والإكسسوارات، واختَر اللي يناسب يومك.',descriptionEn:'From the first idea to the final project. Discover Macs, iPhones and essentials that fit the way you work and live.',primaryAr:'استكشف الأجهزة',primaryEn:'Explore devices',secondaryAr:'ساعدني أختار',secondaryEn:'Help me choose',image:''},
+    hero:{eyebrowAr:'متخصصون بأجهزة Apple · عمّان',eyebrowEn:'Apple specialists · Amman',titleAr:'جهازك الجاي.',titleEn:'Your next device.',highlightAr:'اختيارك الصح.',highlightEn:'Your kind of choice.',descriptionAr:'من أول فكرة لآخر مشروع. اكتشف أجهزة الماك، الآيفون والإكسسوارات، واختَر اللي يناسب يومك.',descriptionEn:'From the first idea to the final project. Discover Macs, iPhones and essentials that fit the way you work and live.',primaryAr:'استكشف الأجهزة',primaryEn:'Explore devices',secondaryAr:'ساعدني أختار',secondaryEn:'Help me choose',image:'',iphoneImage:'',ipadImage:'',airpodsImage:''},
     sections:{hero:true,categories:true,featured:true,guide:true,support:true},
     home:{featuredIds:['macbook-air-13-m2','macbook-pro-14-m1','iphone-15'],featuredTitleAr:'ابدأ من هون.',featuredTitleEn:'A good place to start.',categoriesTitleAr:'كل عالمك، بمكان واحد.',categoriesTitleEn:'Your world. In one place.',guideTitleAr:'مش كل شغل بدّه نفس الجهاز.',guideTitleEn:'Different days. Different devices.',guideDescriptionAr:'دراسة، برمجة ولا تصميم؟ جاوب سؤالين وشوف أقرب الخيارات لاستخدامك وميزانيتك.',guideDescriptionEn:'Study, coding or creative work? Answer two questions to explore options for your workflow and budget.',supportTitleAr:'معك بعد الاختيار.',supportTitleEn:'Beyond the purchase.',supportDescriptionAr:'المحل مختص ببيع وصيانة أجهزة Apple. شوف معلومات التواصل، واسأل عن الخدمة المناسبة لجهازك.',supportDescriptionEn:'One Style specialises in Apple-device sales and service. Explore contact details and ask about the service your device needs.'},
     guide:{titleAr:'خلّينا نختارها سوا.',titleEn:'Let’s find your fit.',descriptionAr:'سؤالين. خيارات أوضح.',descriptionEn:'Two questions. A clearer choice.'},
@@ -42,7 +42,7 @@
     try{const url=new URL(value);return ['https:','http:'].includes(url.protocol)&&!url.username&&!url.password;}catch{return false;}
   }
   function businessURL(value,key){if(value==='')return true;try{const url=new URL(value);if(url.protocol!=='https:'||url.username||url.password)return false;return key==='instagram'?['instagram.com','www.instagram.com'].includes(url.hostname):true;}catch{return false;}}
-  const imageKeys=new Set(['logoImage','image','macbook','iphone','ipad','airpods','watch','accessories']);
+  const imageKeys=new Set(['logoImage','image','iphoneImage','ipadImage','airpodsImage','macbook','iphone','ipad','airpods','watch','accessories']);
   const reservedCategoryIds=new Set(['all','used-like-new','__proto__','constructor','prototype',...categories.map(category=>category.id)]);
   function normalizeCategories(values){
     if(!plain(values)||Object.keys(values).length>24)throw Error('Invalid categories');

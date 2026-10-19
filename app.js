@@ -182,10 +182,11 @@
     }).catch(reveal);
   }
   // Home hero device switcher (2026-10-14): MacBook, iPhone, iPad, AirPods. Only the device image moves.
-  const heroDevices=[{key:'mac',art:'macbook',cat:'mac'},{key:'iphone',art:'iphone',cat:'iphone',off:'assets/photos/iphone-studio-off.webp'},{key:'ipad',art:'ipad',cat:'ipad',off:'assets/photos/ipad-studio-off.webp'},{key:'audio',art:'airpods',cat:'audio'}];
+  const heroDevices=[{key:'mac',art:'macbook',cat:'mac',image:'image'},{key:'iphone',art:'iphone',cat:'iphone',image:'iphoneImage',off:'assets/photos/iphone-studio-off.webp'},{key:'ipad',art:'ipad',cat:'ipad',image:'ipadImage',off:'assets/photos/ipad-studio-off.webp'},{key:'audio',art:'airpods',cat:'audio',image:'airpodsImage'}];
   let heroDevice='mac';
   const reduceMotion=()=>!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const heroArt=d=>d.key==='mac'?art('macbook','#303b4b',t('صورة توضيحية لفئة اللابتوب','Illustrative laptop category image'),settings.hero.image,true):art(d.art,'',catName(d.cat),'',true,{screen:false});
+  const heroImage=d=>settings.hero[d.image]||'';
+  const heroArt=d=>art(d.art,d.key==='mac'?'#303b4b':'',d.key==='mac'?t('صورة توضيحية لفئة اللابتوب','Illustrative laptop category image'):catName(d.cat),heroImage(d),true,{screen:false});
   const heroShopLink=d=>d.key==='mac'?'#/shop':`#/shop/${d.cat}`;
   // AirPods: the earbuds rise out of the open case (2026-10-14). Layers cut from airpods-studio.webp (1230x1278): case, two buds, and the case front that hides them. The photo comes back when they land.
   const podsRig={size:[1230,1278],case:'assets/photos/airpods-case.webp',front:'assets/photos/airpods-case-front.webp',buds:[{src:'assets/photos/airpods-bud-l.webp',box:[244,89,605,522],tip:[365,522],from:[-12,636,-5],delay:0},{src:'assets/photos/airpods-bud-r.webp',box:[661,144,1019,569],tip:[898,569],from:[-20,581,5],delay:140}]};
@@ -209,6 +210,7 @@
     const device=document.querySelector('.hero-device');if(!device)return;
     if(d.key==='mac'&&heroRigWanted()){device.classList.add('rig-pending');playHeroLaptop();return;}
     if(reduceMotion())return;
+    if(heroImage(d)){device.classList.add('device-enter');return;}
     if(d.key==='audio'&&imageFor('airpods')===cfg.defaults.media.airpods){playHeroPods(device);return;}
     const photo=device.querySelector('.device-photo');
     if(!d.off||!photo||imageFor(d.art)!==cfg.defaults.media[d.art]){device.classList.add('device-enter');return;}
