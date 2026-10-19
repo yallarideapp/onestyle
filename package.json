@@ -1,0 +1,23 @@
+{
+  "name": "onestyle",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "dev": "node tools/build.mjs && wrangler dev --port 8788 --ip 127.0.0.1 --env-file tests/local/test.env",
+    "db:local": "wrangler d1 migrations apply DB --local",
+    "deploy": "wrangler d1 migrations apply DB --remote && wrangler deploy",
+    "test": "node tools/build.mjs && node tests/check.mjs",
+    "test:api": "sh tests/local/run.sh python3 tests/local/api-abuse.py",
+    "test:accounts": "sh tests/local/run.sh python3 tests/local/customer-abuse.py",
+    "test:browser": "sh tests/local/run.sh node tests/local/e2e.mjs",
+    "test:widths": "sh tests/local/run.sh node tests/local/sweep.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "4.140.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,0 +1,55 @@
+/* Live site only (Cloudflare build): account pages, admin sign-in, checkout notes. */
+.seo-page{max-width:900px;margin:40px auto;padding:0 20px;line-height:1.8}
+.seo-page h1{font-size:28px;margin-bottom:12px}
+.seo-page a{color:var(--blue)}
+
+.live-account{padding-top:40px;padding-bottom:80px}
+.live-account .page-heading{margin-bottom:24px}
+.live-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:20px;align-items:start}
+.live-card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:24px;max-width:560px}
+.live-grid .live-card{max-width:none}
+.live-card h1{font-size:26px;margin-bottom:10px}
+.live-card h2{font-size:19px;margin-bottom:12px}
+.live-card .button{margin-top:16px}
+.live-card .text-button{display:block;margin:14px auto 0;font-size:12px}
+.live-field{display:flex;flex-direction:column;gap:7px;font-size:12px;margin:13px 0;align-items:stretch}
+.live-field input{border:1px solid #d5dbe4;background:#fff;border-radius:7px;padding:11px;min-height:44px;font-size:14px;width:100%}
+.live-field input:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.live-note{font-size:12px;line-height:1.8;color:var(--muted);margin:8px 0}
+.live-alert{background:#fdecea;color:#9b2a1d;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.7;margin:10px 0}
+.live-success{background:#e8f5ec;color:#1d6b38;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.7;margin:10px 0}
+.live-alert[hidden],.live-success[hidden]{display:none}
+.live-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--paper);border-radius:10px;padding:4px;margin-bottom:8px}
+.live-tabs button{min-height:44px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted);background:none}
+.live-tabs button[aria-selected=true]{background:var(--white);color:var(--ink);box-shadow:0 1px 3px #16181d1a}
+.live-details{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+.live-details summary{cursor:pointer;font-size:13px;font-weight:600;min-height:44px;display:flex;align-items:center}
+.live-orders{list-style:none;padding:0;margin:0;display:grid;gap:12px}
+.live-orders>li{border:1px solid var(--line);border-radius:12px;padding:14px}
+.live-orders ul{list-style:none;padding:0;margin:8px 0;display:grid;gap:6px;font-size:13px}
+.live-orders small{display:block;color:var(--muted);font-size:11px}
+.live-order-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.live-order-total{font-size:13px;margin-top:6px}
+.live-status{font-size:11px;border-radius:99px;padding:4px 10px;background:var(--paper);white-space:nowrap}
+.live-status.s-confirmed,.live-status.s-shipped{background:#e7effd;color:#1854c0}
+.live-status.s-delivered{background:#e8f5ec;color:#1d6b38}
+.live-status.s-cancelled{background:#fdecea;color:#9b2a1d}
+.live-hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;overflow:hidden}
+.live-address[hidden]{display:none}
+.live-account-link.active{color:var(--blue)}
+
+.live-gate{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px 16px;background:var(--paper)}
+.live-gate .live-card{width:min(440px,100%)}
+.live-gate form{margin-top:6px}
+.live-back{text-align:center}
+.live-admin-button{width:100%;background:none;border:0;text-align:start;cursor:pointer;font:inherit}
+.live-product-address{display:grid;gap:6px;margin:0 0 14px;padding:10px 12px;border-radius:10px;background:#f2f5fa;font-size:12px}
+.live-product-address>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.live-product-address code{flex:1 1 220px;min-width:0;overflow-wrap:anywhere;font-size:11px}
+.live-product-address .admin-btn{min-height:32px;padding:4px 12px}
+
+@media(max-width:780px){
+  .live-grid{grid-template-columns:minmax(0,1fr)}
+  .live-account{padding-top:24px}
+  .live-card{padding:20px}
+}

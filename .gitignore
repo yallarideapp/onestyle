@@ -1,0 +1,14 @@
+# Built by `npm run build` (also on Cloudflare at every push)
+dist/
+worker/src/generated/
+# Local tools and data
+node_modules/
+.wrangler/
+# Secrets: never in the repo (the live site's secrets are set in the Cloudflare dashboard)
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+# System files
+.DS_Store
+Thumbs.db
