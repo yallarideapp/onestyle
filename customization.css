@@ -79,16 +79,16 @@ body{font-size:var(--body-font)}
 .device-image>.screen-off.is-on{opacity:0}
 .hero-device.device-enter>.device-image{animation:hero-device-in .6s cubic-bezier(.2,.75,.25,1) both}
 .rig-back>.rig-back-logo{position:absolute;left:44%;top:40%;width:9%;height:16%;fill:#45484d;opacity:.85;transform:scaleY(-1)}
-.category-composition{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr);align-items:end;gap:clamp(2px,.65vw,8px);width:100%;height:100%;padding:4px 2px 1px;direction:ltr}
-.category-composition>span{display:block;position:relative;min-width:0;min-height:0;width:100%;height:100%}
-.category-phones{max-width:158px;margin-inline:auto}
-.category-phone-back{transform:none;translate:22% 0}
-.category-phone-front{transform:none;translate:-22% 0}
+.category-composition{position:relative;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);align-items:end;justify-items:center;gap:0;width:100%;height:100%;padding:4px 2px 1px;direction:ltr;isolation:isolate}
+.category-composition>span{display:block;position:relative;grid-area:1/1;min-width:0;min-height:0;width:100%;height:100%}
+.category-phones{--pair-offset:clamp(10px,1.5vw,16px);max-width:158px;margin-inline:auto}
+.category-phone-back{transform:none;translate:calc(-1 * var(--pair-offset)) 0;z-index:1}
+.category-phone-front{transform:scale(.9);transform-origin:center bottom;translate:var(--pair-offset) 0;z-index:2}
 .category-composition .device-photo{padding:0;width:100%;height:100%;object-fit:contain;object-position:center bottom}
-.category-watches>.device-photo{position:static;min-width:0;min-height:0;width:100%;height:100%}
+.category-watches>.device-photo{position:relative;grid-area:1/1;min-width:0;min-height:0;width:62%;height:100%}
 .category-watches{max-width:220px;margin-inline:auto}
-.category-watch-standard{transform:none;translate:9% 0}
-.category-watch-ultra{transform:none;translate:-9% 0}
+.category-watch-standard{transform:none;translate:-30% 0;z-index:1}
+.category-watch-ultra{transform:none;translate:30% 0;z-index:2}
 .product-badges{position:absolute;top:21px;inset-inline-end:23px;display:flex;flex-direction:column;align-items:flex-end;gap:5px;z-index:2;max-width:50%}
 .condition-badge{display:inline-block;max-width:100%;padding:4px 9px;border-radius:999px;font-size:11px;line-height:1.35;font-weight:700;text-align:center}
 .condition-new{background:#e4efe9;color:#245c43;border:1px solid #bdd8c8}
