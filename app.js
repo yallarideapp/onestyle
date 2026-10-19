@@ -77,9 +77,9 @@
   const conditionBadge=p=>`<span class="condition-badge ${p.condition==='used-like-new'?'condition-used':'condition-new'}">${esc(conditionLabel(p))}</span>`;
   function categoryArt(category,type){
     if(imageFor(type)!==cfg.defaults.media[type])return art(type,'',catName(category));
-    if(category==='iphone')return `<span class="category-composition category-phones"><span class="category-phone-back"><img class="device-photo" src="assets/photos/iphone-18-pro-rear.webp" alt="${t('آيفون 18 برو من الخلف','iPhone 18 Pro rear view')}" loading="lazy" decoding="async"></span><span class="category-phone-front">${art(type,'',t('آيفون من الأمام','iPhone front view'),'',false,{screenPosition:'bottom'})}</span></span>`;
+    if(category==='iphone')return `<span class="category-composition category-phones"><span class="category-phone-back"><img class="device-photo" src="assets/photos/iphone-18-pro-rear.webp" alt="${t('آيفون 18 برو من الخلف','iPhone 18 Pro rear view')}" loading="lazy" decoding="async"></span><span class="category-phone-front">${art(type,'',t('آيفون من الأمام','iPhone front view'),'',false,{screen:false})}</span></span>`;
     if(category==='watch')return `<span class="category-composition category-watches"><img class="device-photo category-watch-standard" src="${esc(imageFor(type))}" alt="${t('ساعة Apple Watch','Apple Watch')}" loading="lazy" decoding="async"><img class="device-photo category-watch-ultra" src="assets/photos/watch-ultra-studio.webp" alt="${t('ساعة Apple Watch Ultra','Apple Watch Ultra')}" loading="lazy" decoding="async"></span>`;
-    return art(type,'',catName(category));
+    return art(type,'',catName(category),'',false,{screen:category!=='ipad'});
   }
   const stockLabel=value=>({demo:t('تجريبي · بانتظار الاعتماد','Illustrative · pending confirmation'),available:t('متوفر في المعاينة','Available in preview'),'on-order':t('حسب الطلب في المعاينة','On request in preview'),unavailable:t('غير متوفر في المعاينة','Unavailable in preview')})[value]||t('بانتظار الاعتماد','Pending confirmation');
   const count=()=>bag.reduce((s,i)=>s+i.quantity,0);
