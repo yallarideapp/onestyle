@@ -159,3 +159,13 @@ body{font-size:var(--body-font)}
 @media(max-width:480px){
   html[dir=rtl] .site-footer .footer-top{grid-template-columns:minmax(0,1fr);gap:26px}
 }
+
+/* Keep new categories without a photo aligned with the device grid. */
+.product-art>.image-placeholder{height:238px}
+.bag-art>.image-placeholder{width:85px;height:82px}
+@media(max-width:1100px){.product-art>.image-placeholder{height:205px}}
+@media(max-width:780px){.product-art>.image-placeholder{height:137px}.guide-result-grid .product-art>.image-placeholder{height:275px}.bag-art>.image-placeholder{width:74px}}
+@media(max-width:370px){.product-art>.image-placeholder{height:118px}}
+
+.category-card>span,.category-tabs button{overflow-wrap:anywhere}
+.category-tabs button{max-width:100%;white-space:normal}

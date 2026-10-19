@@ -19,3 +19,18 @@
 
 .admin-condition{display:inline-block;padding:4px 8px;margin:2px 0 7px;border:1px solid #3c526a;border-radius:999px;font-size:10px;line-height:1.5;color:#b6d6f6;background:#1e2b39}
 .admin-condition-used-like-new{color:#bde3c8;background:#1d3229;border-color:#3f6150}
+
+.admin-category-manager{padding:24px}
+.admin-category-add{border:1px solid var(--admin-border);border-radius:12px;padding:20px;margin-bottom:22px}
+.admin-category-add h3{font-size:16px;margin:0 0 8px}
+.admin-category-add>p,.admin-help-note{font-size:12px;line-height:1.8;color:var(--admin-muted);margin-bottom:20px}
+.admin-category-editor{border-top:1px solid var(--admin-border)}
+.admin-category-editor>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:54px;cursor:pointer;list-style:none;font-size:14px}
+.admin-category-editor>summary strong{overflow-wrap:anywhere}
+.admin-category-editor>summary>span{font-size:22px}
+.admin-category-editor[open]>summary>span{transform:rotate(45deg)}
+.admin-category-editor>form{padding:10px 0 22px}
+@media(max-width:760px){.admin-category-manager{padding:18px}.admin-category-add{padding:14px}.admin-category-add h3{font-size:14px}}
+
+.admin-cat-tab{max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:start}
+.admin-cat-tab span{flex-shrink:0}

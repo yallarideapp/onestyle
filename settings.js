@@ -14,7 +14,8 @@
     {id:'new',labelAr:'جديد',labelEn:'New'},
     {id:'used-like-new',labelAr:'مستعمل — كالجديد',labelEn:'Used — Like New'}
   ];
-  const categoryLabel=(id,lang='en')=>{const category=categories.find(c=>c.id===id);return category?category[lang==='ar'?'labelAr':'labelEn']:id;};
+  const categoryList=(settings=defaults)=>[...categories,...Object.entries(settings.categories||{}).map(([id,category])=>({id,labelAr:category.labelAr,labelEn:category.labelEn,art:`category-${id}`,image:category.image}))];
+  const categoryLabel=(id,lang='en',settings=defaults)=>{const category=categoryList(settings).find(c=>c.id===id);return category?category[lang==='ar'?'labelAr':'labelEn']:id;};
   const conditionLabel=(condition,lang='en')=>(conditions.find(c=>c.id===condition)||conditions[0])[lang==='ar'?'labelAr':'labelEn'];
   const clone=value=>JSON.parse(JSON.stringify(value));
   const defaults={
@@ -28,7 +29,8 @@
     footer:{descriptionAr:'أجهزتك، إكسسواراتك، وخطوتك الجاية.',descriptionEn:'Your devices, your essentials, your next move.'},
     checkout:{ammanFee:0,otherFee:5},
     media:{macbook:'assets/photos/macbook-studio.webp',iphone:'assets/photos/iphone-studio.webp',ipad:'assets/photos/ipad-studio.webp',airpods:'assets/photos/airpods-studio.webp',watch:'assets/photos/watch-studio.webp',accessories:'assets/photos/accessories-studio.webp'},
-    pageTitles:{homeAr:'أجهزة Apple على ذوقك',homeEn:'Your next device',shopAr:'الأجهزة',shopEn:'Shop devices',guideAr:'اختَر جهازك',guideEn:'Find your Mac'}
+    pageTitles:{homeAr:'أجهزة Apple على ذوقك',homeEn:'Your next device',shopAr:'الأجهزة',shopEn:'Shop devices',guideAr:'اختَر جهازك',guideEn:'Find your Mac'},
+    categories:{}
   };
   const plain=value=>value!==null&&typeof value==='object'&&!Array.isArray(value)&&Object.getPrototypeOf(value)===Object.prototype;
   const color=value=>typeof value==='string'&&/^#[0-9a-f]{6}$/i.test(value);
@@ -41,11 +43,36 @@
   }
   function businessURL(value,key){if(value==='')return true;try{const url=new URL(value);if(url.protocol!=='https:'||url.username||url.password)return false;return key==='instagram'?['instagram.com','www.instagram.com'].includes(url.hostname):true;}catch{return false;}}
   const imageKeys=new Set(['logoImage','image','macbook','iphone','ipad','airpods','watch','accessories']);
+  const reservedCategoryIds=new Set(['all','used-like-new','__proto__','constructor','prototype',...categories.map(category=>category.id)]);
+  function normalizeCategories(values){
+    if(!plain(values)||Object.keys(values).length>24)throw Error('Invalid categories');
+    const next={};
+    const usedLikeNew=conditions.find(condition=>condition.id==='used-like-new');
+    const labels=new Set([...categories.flatMap(category=>[category.labelAr,category.labelEn]),'All devices','كل الأجهزة',usedLikeNew.labelAr,usedLikeNew.labelEn].map(label=>label.trim().toLowerCase()));
+    for(const [id,category] of Object.entries(values)){
+      if(id.length>60||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)||reservedCategoryIds.has(id))throw Error('Invalid category ID');
+      if(!plain(category)||Object.keys(category).length!==3||!['labelAr','labelEn','image'].every(key=>Object.hasOwn(category,key)))throw Error('Invalid category fields');
+      const entry={};
+      for(const key of ['labelAr','labelEn']){
+        const value=category[key];
+        if(typeof value!=='string'||!value.trim()||value.length>80||/[\u0000-\u001f\u007f-\u009f<>]/.test(value))throw Error('Invalid category name');
+        entry[key]=value.trim();
+        if(labels.has(entry[key].toLowerCase()))throw Error('Duplicate category name');
+      }
+      if(!imageSource(category.image))throw Error('Invalid image');
+      entry.image=category.image.trim();
+      next[id]=entry;
+      labels.add(entry.labelAr.toLowerCase());labels.add(entry.labelEn.toLowerCase());
+    }
+    return next;
+  }
   function normalizeSettings(patch,current=defaults){
     if(!plain(patch))throw Error('Invalid settings');
     const next=clone(current);
+    if(!Object.hasOwn(next,'categories'))next.categories={};
     for(const [group,values] of Object.entries(patch)){
       if(['__proto__','constructor','prototype'].includes(group)||!Object.hasOwn(defaults,group)||!plain(values))throw Error('Unknown settings group');
+      if(group==='categories'){next.categories=normalizeCategories(values);continue;}
       for(const [key,value] of Object.entries(values)){
         if(['__proto__','constructor','prototype'].includes(key)||!Object.hasOwn(defaults[group],key))throw Error('Unknown settings field');
         const standard=defaults[group][key];
@@ -67,9 +94,10 @@
     }
     return next;
   }
-  function normalizeProduct(patch,existing){
+  function normalizeProduct(patch,existing,settings=defaults){
     if(!plain(patch)||!existing)throw Error('Invalid product');
     const next=clone(existing);
+    const availableCategories=categoryList(settings);
     if(!Object.hasOwn(next,'condition'))next.condition='new';
     const keys=['name','descriptionAr','descriptionEn','category','condition','chip','cpu','ram','storage','screen','network','batteryHours','batteryUse','basePrice','price','offerPrice','availability','hidden','image','colors','ramOptions','storageOptions'];
     for(const [key,value] of Object.entries(patch)){
@@ -80,7 +108,7 @@
       if(key==='batteryUse'){if(!['web','video','listening','mixed','none'].includes(value))throw Error('Invalid battery usage');}
       else if(key==='hidden'){if(typeof value!=='boolean')throw Error('Invalid visibility');}
       else if(key==='availability'){if(!['demo','available','on-order','unavailable'].includes(value))throw Error('Invalid stock');}
-      else if(key==='category'){if(!categories.some(category=>category.id===value))throw Error('Invalid category');}
+      else if(key==='category'){if(!availableCategories.some(category=>category.id===value))throw Error('Invalid category');}
       else if(key==='condition'){if(!conditions.some(condition=>condition.id===value))throw Error('Invalid condition');}
       else if(key==='image'){if(!imageSource(value))throw Error('Invalid image');}
       else if(key==='colors'){if(!Array.isArray(value)||value.length<1||value.length>12||value.some(c=>!plain(c)||typeof c.name!=='string'||!c.name.trim()||c.name.length>70||!color(c.hex)))throw Error('Invalid finishes');}
@@ -91,12 +119,14 @@
     if(Object.hasOwn(next,'offerPrice')&&!(next.offerPrice<next.basePrice))throw Error('Offer must be below the price');
     if(!conditions.some(condition=>condition.id===next.condition))throw Error('Invalid condition');
     if(next.batteryUse==='none')next.batteryHours=null;
-    next.art=categories.find(category=>category.id===next.category)?.art;next.demo=true;
+    const category=availableCategories.find(category=>category.id===next.category);
+    if(!category)throw Error('Invalid category');
+    next.art=category.art;next.demo=true;
     if(Array.isArray(next.ramOptions)&&next.ramOptions.length)next.ram=`${next.ramOptions[0]} GB`;
     if(Array.isArray(next.storageOptions)&&next.storageOptions.length)next.storage=next.storageOptions[0]===1024?'1 TB':`${next.storageOptions[0]} GB`;
     if(Array.isArray(next.ramOptions)&&!next.ramOptions.length)delete next.ramOptions;
     if(Array.isArray(next.storageOptions)&&!next.storageOptions.length)delete next.storageOptions;
     return next;
   }
-  window.OneStyleConfig={defaults,categories,conditions,categoryLabel,conditionLabel,normalizeSettings,normalizeProduct,imageSource,clone};
+  window.OneStyleConfig={defaults,categories,conditions,categoryList,categoryLabel,conditionLabel,normalizeSettings,normalizeProduct,imageSource,clone};
 })();
