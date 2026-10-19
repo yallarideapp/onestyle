@@ -28,6 +28,7 @@
     nav:{homeAr:'الرئيسية',homeEn:'Home',shopAr:'تسوّق الأجهزة',shopEn:'Shop devices',guideAr:'اختَر جهازك',guideEn:'Find your Mac',serviceAr:'الصيانة والدعم',serviceEn:'Service & support',bagAr:'السلة',bagEn:'Bag'},
     footer:{descriptionAr:'أجهزتك، إكسسواراتك، وخطوتك الجاية.',descriptionEn:'Your devices, your essentials, your next move.'},
     checkout:{ammanFee:0,otherFee:5,ordersOn:false},
+    inventory:{lowStockBelow:3},
     media:{macbook:'assets/photos/macbook-studio.webp',iphone:'assets/photos/iphone-studio.webp',ipad:'assets/photos/ipad-studio.webp',airpods:'assets/photos/airpods-studio.webp',watch:'assets/photos/watch-studio.webp',accessories:'assets/photos/accessories-studio.webp'},
     pageTitles:{homeAr:'أجهزة Apple على ذوقك',homeEn:'Your next device',shopAr:'الأجهزة',shopEn:'Shop devices',guideAr:'اختَر جهازك',guideEn:'Find your Mac'},
     categories:{}
