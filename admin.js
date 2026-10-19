@@ -156,7 +156,7 @@
   function settingsView() {
     const s=settings(), brand=s.brand||{}, delivery=s.checkout||{};
     const contact = field(t('اسم المحل','Store name'),'name',brand.name,{required:true,maxLength:100}) + field(t('الهاتف المحلي','Local phone'),'phone',brand.phone,{dir:'ltr',maxLength:30}) + field(t('الهاتف الدولي لواتساب','WhatsApp international phone'),'internationalPhone',brand.internationalPhone,{dir:'ltr',maxLength:30,note:t('مثال: +9627XXXXXXXX','Example: +9627XXXXXXXX')}) + field(t('رابط Instagram','Instagram URL'),'instagram',brand.instagram,{dir:'ltr',maxLength:500}) + field(t('رابط خرائط Google','Google Maps URL'),'maps',brand.maps,{dir:'ltr',maxLength:500}) + bilingualFields(brand,'address',t('عنوان المحل','Store address')) + bilingualFields(brand,'tagline',t('وصف هوية المحل','Store tagline'));
-    return editHeading(t('التواصل والتوصيل','Contact & delivery'),t('عدّل بيانات المحل ورسوم التوصيل واحتفظ بنسخة من التخصيص.','Edit store details, delivery fees and back up your customization.')) + editPanel(t('هوية المحل والتواصل','Store identity & contact'),t('الاسم والعنوان وروابط التواصل','Name, address and contact links'),'brand',contact,true) + editPanel(t('رسوم التوصيل','Delivery fees'),t('تظهر في السلة وملخص الطلب','Shown in checkout and order summaries'),'checkout',field(t('عمّان · دينار','Amman · JOD'),'ammanFee',delivery.ammanFee,{type:'number',min:0,max:100,step:.01,required:true})+field(t('المحافظات الأخرى · دينار','Other cities · JOD'),'otherFee',delivery.otherFee,{type:'number',min:0,max:100,step:.01,required:true})+(window.OneStyleLive?'<label class="admin-checkbox admin-switch"><input type="checkbox" name="ordersOn"'+(delivery.ordersOn===true?' checked':'')+'> '+t('استقبال الطلبات من الموقع','Take orders on the site')+'</label><p class="admin-field-note">'+t('راجع الأسعار قبل التفعيل. لما يكون مفعّل، الموقع بيستقبل الطلبات وبيظهر لجوجل.','Check the prices before turning this on. While on, the site takes orders and shows up on Google.')+'</p>':''),false) + whatsappPanel() + backupPanel();
+    return editHeading(t('التواصل والتوصيل','Contact & delivery'),t('عدّل بيانات المحل ورسوم التوصيل واحتفظ بنسخة من التخصيص.','Edit store details, delivery fees and back up your customization.')) + editPanel(t('هوية المحل والتواصل','Store identity & contact'),t('الاسم والعنوان وروابط التواصل','Name, address and contact links'),'brand',contact,true) + editPanel(t('رسوم التوصيل','Delivery fees'),t('تظهر في السلة وملخص الطلب','Shown in checkout and order summaries'),'checkout',field(t('عمّان · دينار','Amman · JOD'),'ammanFee',delivery.ammanFee,{type:'number',min:0,max:100,step:.01,required:true})+field(t('المحافظات الأخرى · دينار','Other cities · JOD'),'otherFee',delivery.otherFee,{type:'number',min:0,max:100,step:.01,required:true})+(window.OneStyleLive?'<label class="admin-checkbox admin-switch"><input type="checkbox" name="ordersOn"'+(delivery.ordersOn===true?' checked':'')+'> '+t('استقبال الطلبات من الموقع','Take orders on the site')+'</label><p class="admin-field-note">'+t('راجع الأسعار قبل التفعيل. لما يكون مفعّل، الموقع بيستقبل الطلبات وبيظهر لجوجل.','Check the prices before turning this on. While on, the site takes orders and shows up on Google.')+'</p>':''),false) + alertsPanel() + backupPanel();
   }
   function productsView() {
     const availability = [['demo',t('بانتظار اعتماد المحل','Pending store confirmation')],['available',t('متوفر في المعاينة','Available in preview')],['on-order',t('حسب الطلب في المعاينة','On request in preview')],['unavailable',t('غير متوفر في المعاينة','Unavailable in preview')]];
@@ -177,25 +177,52 @@
     let content = section === 'content' ? contentView() : section === 'appearance' ? appearanceView() : section === 'settings' ? settingsView() : section === 'products' ? productsView() : selected === 'orders' ? ordersView() : /^order[/:]/.test(selected) ? orderDetail(orderId) : overview();
     return '<div class="admin-shell" dir="' + (english() ? 'ltr' : 'rtl') + '" data-admin-view="' + esc(selected) + '"><button class="admin-scrim" type="button" data-admin-close aria-label="' + t('إغلاق القائمة','Close navigation') + '" tabindex="-1"></button><aside class="admin-sidebar" id="admin-sidebar"><a class="admin-brand" href="#/admin"><span class="admin-brand-word">' + esc((settings().brand||{}).name||'One Style') + '</span><small>' + t('إدارة المتجر','STORE ADMINISTRATION') + '</small></a><span class="admin-nav-label">' + t('مساحة العمل','WORKSPACE') + '</span><nav aria-label="' + t('قائمة الإدارة','Administration navigation') + '">' + nav.map(n => '<a href="' + n[1] + '" class="admin-nav-link' + (section === n[0] ? ' is-active' : '') + '"' + (section === n[0] ? ' aria-current="page"' : '') + '>' + icon(n[2]) + '<span>' + n[3] + '</span>' + (n[0] === 'orders' ? '<b>' + orders().filter(o => normalizedStatus(o.status)==='new').length + '</b>' : '') + '</a>').join('') + '</nav><div class="admin-sidebar-bottom"><div class="admin-demo-dot"><i></i>' + t('وضع المعاينة','Preview mode') + '</div><a class="admin-nav-link" href="#/">' + icon('external') + t('عرض المتجر','View the store') + '</a></div></aside><div class="admin-workspace"><header class="admin-topbar"><div class="admin-top-left"><button class="admin-menu-button" type="button" data-admin-menu aria-label="' + t('فتح قائمة الإدارة','Open administration navigation') + '" aria-controls="admin-sidebar" aria-expanded="false">' + icon('menu') + '</button><span>' + t('لوحة الإدارة','Store administration') + '</span></div><div class="admin-top-left"><button class="admin-store-link" type="button" data-action="language" style="background:transparent;color:inherit;cursor:pointer" aria-label="' + t('التبديل إلى الإنجليزية','Switch to Arabic') + '">' + t('English','العربية') + '</button><a class="admin-store-link" href="#/">' + t('المتجر','Store') + icon('external') + '</a></div></header><div class="admin-demo-banner"><i></i><span>' + t('معاينة محلية — لا توجد طلبات حقيقية','Local preview — no real orders') + '</span></div><main class="admin-main">' + content + '</main></div></div>';
   }
-  function whatsappPanel() {
-    const alerts = api().whatsappAlerts; if (window.OneStyleLive || !alerts) return '';
-    const saved = alerts.get();
-    return '<section class="admin-panel admin-pad admin-backup admin-wa" data-admin-wa><h2>' + t('تنبيهات الطلبات على واتساب','WhatsApp order alerts') + '</h2><p>' + t('كل طلب جديد بيوصلك رسالة على الواتس عن طريق CallMeBot. الرقم والمفتاح بينحفظوا على هذا المتصفح بس، وما بيدخلوا بملف التخصيص.','Each new order sends you a WhatsApp message through CallMeBot. The number and key are saved on this browser only and stay out of the customization file.') + '</p><p class="admin-wa-status" data-on="' + (saved ? 'true' : 'false') + '">' + (saved ? icon('check') + t('مفعّلة على ','On for ') + '<bdi dir="ltr">' + esc(saved.phone) + '</bdi>' : t('غير مفعّلة على هذا المتصفح','Off on this browser')) + '</p><form data-admin-wa-form><div class="admin-edit-grid">' + field(t('رقم الواتس','WhatsApp number'),'waPhone',saved ? saved.phone : '',{dir:'ltr',maxLength:20,required:true,autocomplete:'off',note:t('مثال: ‎+9627XXXXXXXX‎ أو 07XXXXXXXX','Example: +9627XXXXXXXX or 07XXXXXXXX')}) + field(t('مفتاح CallMeBot (apikey)','CallMeBot key (apikey)'),'waKey','',{dir:'ltr',maxLength:64,required:true,autocomplete:'off',note:t('من واتسابك ابعت ‎I allow callmebot to send me messages‎ لرقم CallMeBot، وبيرد عليك بالمفتاح.','From your WhatsApp, send “I allow callmebot to send me messages” to the CallMeBot number; it replies with your key.')}) + '</div><div class="admin-backup-actions"><button type="submit" class="admin-btn admin-btn-primary">' + icon('check') + t('حفظ','Save') + '</button>' + (saved ? '<button type="button" class="admin-btn" data-admin-wa-test>' + t('ابعت رسالة تجربة','Send a test message') + '</button><button type="button" class="admin-btn admin-danger" data-admin-wa-clear>' + t('إيقاف التنبيهات','Turn alerts off') + '</button>' : '') + '</div><p class="admin-form-feedback" role="status"></p></form></section>';
+  function alertsPanel() {
+    const alerts = api().orderAlerts; if (window.OneStyleLive || !alerts) return '';
+    const saved = alerts.get(), channel = saved ? saved.channel : 'telegram';
+    const status = !saved ? t('غير مفعّلة على هذا المتصفح','Off on this browser') : icon('check') + (saved.channel==='telegram' ? t('مفعّلة على تلغرام · Chat ID ','On · Telegram · chat ID ') + '<bdi dir="ltr">' + esc(saved.chatId) + '</bdi>' : t('مفعّلة على واتساب · ','On · WhatsApp · ') + '<bdi dir="ltr">' + esc(saved.phone) + '</bdi>');
+    const choice = (id,label) => '<label class="admin-alert-choice"><input type="radio" name="channel" value="' + id + '"' + (channel===id ? ' checked' : '') + '><span>' + label + '</span></label>';
+    const group = (id,body) => '<div class="admin-edit-grid" data-alert-fields="' + id + '"' + (channel===id ? '' : ' hidden') + '>' + body + '</div>';
+    const telegram = field(t('توكن البوت','Bot token'),'tgToken','',{dir:'ltr',maxLength:80,autocomplete:'off',note:t('بتلغرام: ‎@BotFather‎ ← ‎/newbot‎ وبيعطيك التوكن. بعدها افتح البوت تبعك واضغط Start.','In Telegram: @BotFather → /newbot gives you the token. Then open your bot and press Start.')}) + field('Chat ID','tgChat',saved && saved.channel==='telegram' ? saved.chatId : '',{dir:'ltr',maxLength:24,autocomplete:'off',note:t('اضغط «جيب الـ Chat ID» بعد ما تضغط Start على البوت.','Press “Find my chat ID” after pressing Start in your bot.')});
+    const whatsapp = field(t('رقم الواتس','WhatsApp number'),'waPhone',saved && saved.channel==='whatsapp' ? saved.phone : '',{dir:'ltr',maxLength:20,autocomplete:'off',note:t('مثال: ‎+9627XXXXXXXX‎ أو 07XXXXXXXX','Example: +9627XXXXXXXX or 07XXXXXXXX')}) + field(t('مفتاح CallMeBot (apikey)','CallMeBot key (apikey)'),'waKey','',{dir:'ltr',maxLength:64,autocomplete:'off',note:t('من واتسابك ابعت ‎I allow callmebot to send me messages‎ لرقم CallMeBot، وبيرد عليك بالمفتاح.','From your WhatsApp, send “I allow callmebot to send me messages” to the CallMeBot number; it replies with your key.')});
+    return '<section class="admin-panel admin-pad admin-backup admin-alerts" data-admin-alerts><h2>' + t('تنبيهات الطلبات','Order alerts') + '</h2><p>' + t('كل طلب جديد بيوصلك رسالة على تلغرام أو واتساب. التوكن والمفاتيح بينحفظوا على هذا المتصفح بس، وما بيدخلوا بملف التخصيص.','Each new order sends you a message on Telegram or WhatsApp. Tokens and keys are saved on this browser only and stay out of the customization file.') + '</p><p class="admin-alert-status" data-on="' + (saved ? 'true' : 'false') + '">' + status + '</p><form data-admin-alerts-form novalidate><div class="admin-alert-choices">' + choice('telegram',t('تلغرام','Telegram')) + choice('whatsapp',t('واتساب · CallMeBot','WhatsApp · CallMeBot')) + '</div>' + group('telegram',telegram) + group('whatsapp',whatsapp) + '<div class="admin-backup-actions"><button type="submit" class="admin-btn admin-btn-primary">' + icon('check') + t('حفظ','Save') + '</button><button type="button" class="admin-btn" data-admin-alert-find' + (channel==='telegram' ? '' : ' hidden') + '>' + t('جيب الـ Chat ID','Find my chat ID') + '</button>' + (saved ? '<button type="button" class="admin-btn" data-admin-alert-test>' + t('ابعت رسالة تجربة','Send a test message') + '</button><button type="button" class="admin-btn admin-danger" data-admin-alert-clear>' + t('إيقاف التنبيهات','Turn alerts off') + '</button>' : '') + '</div><p class="admin-form-feedback" role="status"></p></form></section>';
   }
-  function whatsappActions(event, root) {
-    const test = event.target.closest('[data-admin-wa-test]'), clear = event.target.closest('[data-admin-wa-clear]'), alerts = api().whatsappAlerts;
-    if (!alerts || (!test && !clear)) return false;
-    if (clear) { alerts.clear(); refreshAdmin(root,'settings'); if (typeof api().toast==='function') api().toast(t('توقفت تنبيهات الواتساب على هذا المتصفح.','WhatsApp alerts are off on this browser.')); return true; }
-    const form = test.closest('form'); test.disabled = true; feedback(form,t('جاري الإرسال…','Sending…'),false);
-    alerts.test().then(ok => { test.disabled = false; feedback(form,ok ? t('انبعتت. لازم توصلك على الواتس خلال دقيقة. إذا ما وصلت، راجع الرقم والمفتاح.','Sent. It should reach your WhatsApp within a minute. If it doesn’t, check the number and key.') : t('ما قدرنا نوصل لـ CallMeBot. تأكد من الإنترنت وجرّب كمان مرة.','Couldn’t reach CallMeBot. Check the connection and try again.'),!ok); });
+  function alertChannel(form) { const checked = form.querySelector('input[name=channel]:checked'); return checked ? checked.value : 'telegram'; }
+  function showAlertChannel(form) {
+    const channel = alertChannel(form);
+    form.querySelectorAll('[data-alert-fields]').forEach(group => { group.hidden = group.dataset.alertFields !== channel; });
+    const find = form.querySelector('[data-admin-alert-find]'); if (find) find.hidden = channel !== 'telegram';
+    feedback(form,'',false);
+  }
+  function alertActions(event, root) {
+    const find = event.target.closest('[data-admin-alert-find]'), test = event.target.closest('[data-admin-alert-test]'), clear = event.target.closest('[data-admin-alert-clear]'), alerts = api().orderAlerts;
+    if (!alerts || (!find && !test && !clear)) return false;
+    if (clear) { alerts.clear(); refreshAdmin(root,'settings'); if (typeof api().toast==='function') api().toast(t('توقفت تنبيهات الطلبات على هذا المتصفح.','Order alerts are off on this browser.')); return true; }
+    const form = (find || test).closest('form'), button = find || test; button.disabled = true;
+    if (find) {
+      feedback(form,t('بدوّر…','Looking…'),false);
+      alerts.findChat(form.elements.namedItem('tgToken').value).then(r => {
+        button.disabled = false;
+        if (r.chatId) { form.elements.namedItem('tgChat').value = r.chatId; feedback(form,t('لقيناه: ','Found: ') + (r.name ? r.name + ' · ' : '') + r.chatId + t('. اضغط حفظ.','. Now press Save.'),false); return; }
+        feedback(form,r.error==='token' ? t('التوكن مش صحيح. انسخه كامل من رسالة BotFather.','That token isn’t valid. Copy the whole token from BotFather’s message.') : r.error==='nostart' ? t('افتح البوت تبعك بتلغرام واضغط Start أو ابعتله أي رسالة، وبعدين جرّب كمان مرة.','Open your bot in Telegram and press Start (or send it any message), then try again.') : t('ما قدرنا نوصل لتلغرام. تأكد من الإنترنت وجرّب كمان مرة.','Couldn’t reach Telegram. Check the connection and try again.'),true);
+      });
+      return true;
+    }
+    feedback(form,t('جاري الإرسال…','Sending…'),false);
+    alerts.test().then(result => {
+      button.disabled = false;
+      feedback(form,result==='delivered' ? t('وصلت ✓ شيّك تلغرام.','Delivered ✓ Check Telegram.') : result==='sent' ? t('انبعتت لـ CallMeBot. لازم توصلك على الواتس خلال دقيقة، وإذا ما وصلت راجع الرقم والمفتاح.','Sent to CallMeBot. It should reach your WhatsApp within a minute; if not, check the number and key.') : alerts.get() && alerts.get().channel==='telegram' ? t('ما وصلت. تأكد إنك ضغطت Start على البوت، وإن التوكن والـ Chat ID صح.','Not delivered. Make sure you pressed Start in your bot and the token and chat ID are right.') : t('ما قدرنا نوصل لـ CallMeBot. تأكد من الإنترنت وجرّب كمان مرة.','Couldn’t reach CallMeBot. Check the connection and try again.'),result!=='delivered' && result!=='sent');
+    });
     return true;
   }
-  function whatsappSubmit(form, root) {
-    const data = new FormData(form), alerts = api().whatsappAlerts;
-    if (!alerts || !alerts.save(data.get('waPhone'),data.get('waKey'))) { feedback(form,t('راجع الرقم والمفتاح: الرقم مثل ‎+9627XXXXXXXX‎، والمفتاح من رسالة CallMeBot.','Check the number and key: the number like +9627XXXXXXXX, the key from the CallMeBot message.'),true); return; }
+  function alertsSubmit(form, root) {
+    const data = new FormData(form), channel = alertChannel(form), alerts = api().orderAlerts; if (!alerts) return;
+    if (channel==='telegram' && !String(data.get('tgChat')||'').trim() && String(data.get('tgToken')||'').trim()) { feedback(form,t('اضغط «جيب الـ Chat ID» أول، وبعدين حفظ.','Press “Find my chat ID” first, then Save.'),true); return; }
+    const ok = alerts.save(channel==='telegram' ? {channel,token:data.get('tgToken'),chatId:data.get('tgChat')} : {channel,phone:data.get('waPhone'),apikey:data.get('waKey')});
+    if (!ok) { feedback(form,channel==='telegram' ? t('راجع التوكن والـ Chat ID: التوكن من BotFather، والـ Chat ID أرقام.','Check the token and chat ID: the token from BotFather, the chat ID in digits.') : t('راجع الرقم والمفتاح: الرقم مثل ‎+9627XXXXXXXX‎، والمفتاح من رسالة CallMeBot.','Check the number and key: the number like +9627XXXXXXXX, the key from the CallMeBot message.'),true); return; }
     refreshAdmin(root,'settings');
-    const panel = root.querySelector('[data-admin-wa] form'); feedback(panel,t('انحفظت. اضغط «ابعت رسالة تجربة».','Saved. Now press “Send a test message”.'),false);
-    if (typeof api().toast==='function') api().toast(t('انحفظت تنبيهات الواتساب.','WhatsApp alerts saved.'));
+    feedback(root.querySelector('[data-admin-alerts] form'),t('انحفظت. اضغط «ابعت رسالة تجربة».','Saved. Now press “Send a test message”.'),false);
+    if (typeof api().toast==='function') api().toast(t('انحفظت تنبيهات الطلبات.','Order alerts saved.'));
   }
   function feedback(form, message, error) {
     const target = form && form.querySelector('.admin-form-feedback');
@@ -277,7 +304,7 @@
     if (!root || boundRoots.has(root)) return;
     boundRoots.add(root);
     root.addEventListener('click', event => {
-      if(whatsappActions(event,root)) return;
+      if(alertActions(event,root)) return;
       if(customizationActions(event,root)) return;
       const menu = event.target.closest('[data-admin-menu]');
       const close = event.target.closest('[data-admin-close]');
@@ -302,6 +329,7 @@
       const input=event.target.closest('.admin-media-field input[name]'); if(input) updateImagePreview(input.closest('.admin-media-field'),input.value.trim());
     });
     root.addEventListener('change',event=>{
+      const alertChoice=event.target.closest('[data-admin-alerts-form] input[name=channel]'); if(alertChoice){showAlertChannel(alertChoice.form);return;}
       const upload=event.target.closest('[data-admin-image-upload]'), imported=event.target.closest('[data-admin-import]');
       if(upload) {
         const file=upload.files && upload.files[0], fieldRoot=upload.closest('.admin-media-field'), status=fieldRoot.querySelector('.admin-upload-feedback'), form=upload.closest('form'); if(!file) return;
@@ -318,8 +346,8 @@
       }
     });
     root.addEventListener('submit', event => {
-      const waForm = event.target.closest('[data-admin-wa-form]');
-      if (waForm) { event.preventDefault(); if (waForm.reportValidity()) whatsappSubmit(waForm,root); return; }
+      const alertsForm = event.target.closest('[data-admin-alerts-form]');
+      if (alertsForm) { event.preventDefault(); alertsSubmit(alertsForm,root); return; }
       const form = event.target.closest('[data-admin-product-form], [data-admin-order-form], [data-admin-settings-form], [data-admin-category-form]');
       if (!form) return;
       event.preventDefault();
