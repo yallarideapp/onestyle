@@ -169,3 +169,7 @@ body{font-size:var(--body-font)}
 
 .category-card>span,.category-tabs button{overflow-wrap:anywhere}
 .category-tabs button{max-width:100%;white-space:normal}
+
+.card-info>.product-battery{display:grid;gap:3px;font-size:12px;line-height:1.5;margin-top:10px;color:var(--muted)}
+.product-battery bdi{white-space:nowrap}
+@media(max-width:780px){.card-info>.product-battery{font-size:11px}}
