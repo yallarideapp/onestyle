@@ -53,9 +53,29 @@ await toastSaved(admin); ok(true, 'price and photo saved to the site');
 const content = await admin.evaluate(async () => (await fetch('/api/content')).json());
 const mac = content.content.catalog.find((p) => p.id === 'macbook-pro-14-m1');
 ok(mac.basePrice === 815 && /^api\/photo\/[a-f0-9]{32}$/.test(mac.image), `published: price ${mac.basePrice}, photo ${mac.image}`);
+// stock: the one-tap toggle and the admin-only count, on the live server
+const pubOf = async (id) => (await admin.evaluate(async () => (await fetch('/api/content', { cache: 'no-store' })).json())).content.catalog.find((p) => p.id === id);
+await admin.waitForSelector('[data-admin-stock-toggle="macbook-pro-14-m3"]', { state: 'attached' });
+for (let i = 0; i < 2 && (await pubOf('macbook-pro-14-m3')).availability !== 'unavailable'; i++) {
+  const before = (await pubOf('macbook-pro-14-m3')).availability;
+  await admin.click('[data-admin-stock-toggle="macbook-pro-14-m3"]');
+  for (let k = 0; k < 40 && (await pubOf('macbook-pro-14-m3')).availability === before; k++) await admin.waitForTimeout(250);
+}
+ok((await pubOf('macbook-pro-14-m3')).availability === 'unavailable', 'stock toggle publishes Out of stock');
+await admin.evaluate(() => { const d = document.querySelector('form[data-admin-product-form="macbook-pro-14-m1"]').closest('details'); if (d) d.open = true; });
+await form.locator('input[name=stockCount]').fill('2'); await form.locator('[type=submit]').first().click();
+let adminCount;
+for (let k = 0; k < 40; k++) { adminCount = (await admin.evaluate(async () => (await fetch('/api/admin/content', { cache: 'no-store' })).json())).content.catalog.find((p) => p.id === 'macbook-pro-14-m1').stockCount; if (adminCount === 2) break; await admin.waitForTimeout(250); }
+const pubMac = await pubOf('macbook-pro-14-m1');
+ok(adminCount === 2 && !('stockCount' in pubMac) && pubMac.basePrice === 815, `stock count kept for the admin only (admin ${adminCount}, public ${'stockCount' in pubMac ? 'has it' : 'none'})`);
+ok(await admin.waitForSelector('[data-admin-stock="macbook-pro-14-m1"] .admin-stock-pill.is-low', { state: 'attached', timeout: 5000 }).then(() => true, () => false), 'admin marks a count of 2 as Low stock');
 
 // ---------- shopper in a second browser ----------
 const shopCtx = await b.newContext({ viewport: { width: 390, height: 844 } });
+const soldOut = await shopCtx.newPage(); watch(soldOut, 'shop-stock');
+await soldOut.goto(`${BASE}/devices/macbook-pro-14-m3`); await soldOut.waitForSelector('.add-button');
+ok(await soldOut.locator('.add-button').isDisabled() && /Out of stock|غير متوفر/.test(await soldOut.locator('.add-button').innerText()), 'out-of-stock device: the shopper cannot add it to the bag');
+await soldOut.close();
 const shop = await shopCtx.newPage(); watch(shop, 'shop');
 await shop.goto(`${BASE}/devices/macbook-pro-14-m1-pro`); await shop.waitForSelector('#detail-price');
 ok(/815/.test(await shop.locator('#detail-price').innerText()), 'second browser sees the new price');

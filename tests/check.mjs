@@ -120,6 +120,28 @@ test('the public copy hides hidden devices and the address history', () => {
   assert.equal(typeof Object.values(pub.slugs)[0], 'string');
 });
 
+test('stock counts stay in the admin; a count of 0 marks the device out of stock', () => {
+  const c = cfg.clone(content);
+  c.catalog[1].stockCount = 4; c.catalog[2].stockCount = 0;
+  const clean = cfg.normalizeCatalog(c.catalog, c.settings);
+  assert.equal(clean[1].stockCount, 4);
+  assert.equal(clean[2].availability, 'unavailable');
+  const pub = publicCopy({ ...c, catalog: clean });
+  assert.ok(pub.catalog.length > 2 && pub.catalog.every((p) => !('stockCount' in p)));
+  assert.equal(pub.catalog.find((p) => p.id === clean[2].id).availability, 'unavailable');
+  assert.throws(() => cfg.normalizeCatalog([{ ...clean[1], stockCount: -1 }], c.settings));
+});
+
+test('battery health and cycles: only for used devices, within range', () => {
+  const c = cfg.clone(content);
+  const used = { ...c.catalog[0], condition: 'used-like-new', batteryUse: 'mixed', batteryHealth: 88, batteryCycles: 240 };
+  const [kept] = cfg.normalizeCatalog([used], c.settings);
+  assert.equal(kept.batteryHealth, 88); assert.equal(kept.batteryCycles, 240);
+  const [fresh] = cfg.normalizeCatalog([{ ...used, condition: 'new' }], c.settings);
+  assert.equal(fresh.batteryHealth, null); assert.equal(fresh.batteryCycles, null);
+  assert.throws(() => cfg.normalizeCatalog([{ ...used, batteryHealth: 101 }], c.settings));
+});
+
 test('Jordanian mobiles in any common form', () => {
   for (const v of ['0791234567', '791234567', '+962791234567', '00962 79 123 4567', '٠٧٩١٢٣٤٥٦٧']) assert.equal(normaliseMobile(v), '0791234567', v);
   for (const v of ['12345', '0761234567', '+9627912345678', '']) assert.equal(normaliseMobile(v), null, v);

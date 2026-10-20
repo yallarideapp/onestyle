@@ -28,6 +28,7 @@
     nav:{homeAr:'الرئيسية',homeEn:'Home',shopAr:'تسوّق الأجهزة',shopEn:'Shop devices',guideAr:'اختَر جهازك',guideEn:'Find your Mac',serviceAr:'الصيانة والدعم',serviceEn:'Service & support',bagAr:'السلة',bagEn:'Bag'},
     footer:{descriptionAr:'أجهزتك، إكسسواراتك، وخطوتك الجاية.',descriptionEn:'Your devices, your essentials, your next move.'},
     checkout:{ammanFee:0,otherFee:5,ordersOn:false},
+    inventory:{lowStockBelow:3},
     media:{macbook:'assets/photos/macbook-studio.webp',iphone:'assets/photos/iphone-studio.webp',ipad:'assets/photos/ipad-studio.webp',airpods:'assets/photos/airpods-studio.webp',watch:'assets/photos/watch-studio.webp',accessories:'assets/photos/accessories-studio.webp'},
     pageTitles:{homeAr:'أجهزة Apple على ذوقك',homeEn:'Your next device',shopAr:'الأجهزة',shopEn:'Shop devices',guideAr:'اختَر جهازك',guideEn:'Find your Mac'},
     categories:{}
@@ -100,12 +101,16 @@
     const next=clone(existing);
     const availableCategories=categoryList(settings);
     if(!Object.hasOwn(next,'condition'))next.condition='new';
-    const keys=['name','descriptionAr','descriptionEn','category','condition','chip','cpu','ram','storage','screen','network','batteryHours','batteryUse','basePrice','price','offerPrice','availability','hidden','image','colors','ramOptions','storageOptions'];
+    for(const key of ['batteryHealth','batteryCycles'])if(!Object.hasOwn(next,key))next[key]=null;
+    const keys=['name','descriptionAr','descriptionEn','category','condition','chip','cpu','ram','storage','screen','network','batteryHours','batteryUse','batteryHealth','batteryCycles','basePrice','price','offerPrice','availability','stockCount','hidden','image','colors','ramOptions','storageOptions'];
     for(const [key,value] of Object.entries(patch)){
       if(!keys.includes(key))throw Error('Unknown product field');
       if(key==='basePrice'||key==='price'){if(!Number.isFinite(value)||value<=0||value>100000)throw Error('Invalid price');next.basePrice=Math.round(value*100)/100;continue;}
       if(key==='offerPrice'){if(value===null||value===''){delete next.offerPrice;continue;}if(!Number.isFinite(value)||value<=0||value>100000)throw Error('Invalid offer');const offer=Math.round(value*100)/100;if(offer<.01)throw Error('Invalid offer');next.offerPrice=offer;continue;}
+      // Optional count for the admin only; 0 means out of stock.
+      if(key==='stockCount'){if(value===null||value===''){delete next.stockCount;continue;}if(!Number.isInteger(value)||value<0||value>100000)throw Error('Invalid stock count');next.stockCount=value;continue;}
       if(key==='batteryHours'){if(value!==null&&(!Number.isFinite(value)||value<=0||value>1000))throw Error('Invalid battery hours');next.batteryHours=value;continue;}
+      if(key==='batteryHealth'||key==='batteryCycles'){if(value!==null&&(!Number.isInteger(value)||value<0||value>(key==='batteryHealth'?100:100000)))throw Error('Invalid battery condition');next[key]=value;continue;}
       if(key==='batteryUse'){if(!['web','video','listening','mixed','none'].includes(value))throw Error('Invalid battery usage');}
       else if(key==='hidden'){if(typeof value!=='boolean')throw Error('Invalid visibility');}
       else if(key==='availability'){if(!['demo','available','on-order','unavailable'].includes(value))throw Error('Invalid stock');}
@@ -119,7 +124,10 @@
     }
     if(Object.hasOwn(next,'offerPrice')&&!(next.offerPrice<next.basePrice))throw Error('Offer must be below the price');
     if(!conditions.some(condition=>condition.id===next.condition))throw Error('Invalid condition');
+    for(const key of ['batteryHealth','batteryCycles'])if(next[key]!==null&&(!Number.isInteger(next[key])||next[key]<0||next[key]>(key==='batteryHealth'?100:100000)))throw Error('Invalid battery condition');
     if(next.batteryUse==='none')next.batteryHours=null;
+    if(next.condition!=='used-like-new'||next.batteryUse==='none')next.batteryHealth=next.batteryCycles=null;
+    if(next.stockCount===0)next.availability='unavailable';
     const category=availableCategories.find(category=>category.id===next.category);
     if(!category)throw Error('Invalid category');
     next.art=category.art;next.demo=true;
@@ -130,9 +138,9 @@
     return next;
   }
   // Shared by the storefront, the admin and the live server: one place for catalog checks and prices.
-  const productFields=['name','descriptionAr','descriptionEn','category','condition','chip','cpu','ram','storage','screen','network','batteryHours','batteryUse','basePrice','offerPrice','availability','hidden','image','colors','ramOptions','storageOptions'];
+  const productFields=['name','descriptionAr','descriptionEn','category','condition','chip','cpu','ram','storage','screen','network','batteryHours','batteryUse','batteryHealth','batteryCycles','basePrice','offerPrice','availability','stockCount','hidden','image','colors','ramOptions','storageOptions'];
   function productPatch(p){const patch={};for(const key of productFields){if(Object.hasOwn(p,key))patch[key]=clone(p[key]);}patch.ramOptions=p.ramOptions||[];patch.storageOptions=p.storageOptions||[];return patch;}
-  function productTemplate(id){return {id,name:'New device',category:'mac',condition:'new',art:'macbook',chip:'',ram:'',storage:'',screen:'',batteryHours:null,batteryUse:'mixed',basePrice:500,availability:'demo',demo:true,descriptionAr:'',descriptionEn:'',colors:[{name:'Graphite',hex:'#535966'}],use:[]};}
+  function productTemplate(id){return {id,name:'New device',category:'mac',condition:'new',art:'macbook',chip:'',ram:'',storage:'',screen:'',batteryHours:null,batteryUse:'mixed',batteryHealth:null,batteryCycles:null,basePrice:500,availability:'demo',demo:true,descriptionAr:'',descriptionEn:'',colors:[{name:'Graphite',hex:'#535966'}],use:[]};}
   function normalizeCatalog(records,categorySettings=defaults){
     if(!Array.isArray(records)||records.length<1||records.length>100)throw Error('Invalid catalog');
     const ids=new Set();

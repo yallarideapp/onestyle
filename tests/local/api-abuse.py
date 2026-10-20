@@ -110,6 +110,21 @@ s2, j2, _, _ = req('PUT', '/api/admin/content', {'baseVersion': ver, 'content': 
 s, j, _, _ = req('POST', '/api/order', order()); check('sold-out device cannot be ordered', s == 409 and j['error'] == 'sold-out', (s, j))
 s2, j2, _, _ = req('PUT', '/api/admin/content', {'baseVersion': ver, 'content': content}, A); ver = j2['version']; content = j2['content']
 check('restore after sold-out test', s2 == 200, (s2, j2))
+# stock count (admin only; 0 = out of stock) and a used device's battery condition
+st = json.loads(json.dumps(content))
+next(p for p in st['catalog'] if p['id'] == 'usb-c-charger')['stockCount'] = 0
+mb = next(p for p in st['catalog'] if p['id'] == 'macbook-pro-14-m1')
+mb.update({'stockCount': 5, 'condition': 'used-like-new', 'batteryUse': 'mixed', 'batteryHealth': 88, 'batteryCycles': 240})
+s2, j2, _, _ = req('PUT', '/api/admin/content', {'baseVersion': ver, 'content': st}, A); ver = j2['version']
+s3, j3, _, _ = req('GET', '/api/content'); s4, j4, _, _ = req('GET', '/api/admin/content', headers=A)
+pub_charger = next(p for p in j3['content']['catalog'] if p['id'] == 'usb-c-charger')
+check('stock counts kept for the admin, left out of the public content', s2 == 200 and all('stockCount' not in p for p in j3['content']['catalog']) and next(p for p in j4['content']['catalog'] if p['id'] == 'macbook-pro-14-m1').get('stockCount') == 5, (s2, j2 and j2.get('error')))
+check('stock count 0 shows the device as out of stock', pub_charger['availability'] == 'unavailable', pub_charger.get('availability'))
+s, j, _, _ = req('POST', '/api/order', order()); check('device with stock count 0 cannot be ordered', s == 409 and j['error'] == 'sold-out', (s, j))
+s, _, _, t = req('GET', '/devices/macbook-pro-14-m1-pro'); s5, _, _, t5 = req('GET', '/ar/devices/macbook-pro-14-m1-pro')
+check('used device page lists battery health and cycles', s == 200 and 'Battery health 88%' in t and 'Battery cycles 240' in t and s5 == 200 and 'صحة البطارية 88%' in t5, (s, s5))
+s2, j2, _, _ = req('PUT', '/api/admin/content', {'baseVersion': ver, 'content': content}, A); ver = j2['version']; content = j2['content']
+check('restore after stock test', s2 == 200, (s2, j2))
 
 # ---------- orders ----------
 s, j, h, _ = req('POST', '/api/order', order(), {'Origin': 'https://evil.example'}); check('foreign Origin refused', s == 403 and j['error'] == 'bad-origin', s)

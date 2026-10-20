@@ -78,7 +78,10 @@ function pageBody(page, published, lang) {
   const visible = catalog.filter((p) => !p.hidden);
   if (page.kind === 'device') {
     const p = page.product;
-    const specs = [p.chip, p.cpu, p.ram, p.storage, p.screen, p.network].filter(Boolean);
+    // Used devices: battery health and charge cycles, when the shop entered them.
+    const used = p.condition === 'used-like-new' && p.batteryUse !== 'none';
+    const battery = used ? [Number.isInteger(p.batteryHealth) ? `${ar ? 'صحة البطارية' : 'Battery health'} ${p.batteryHealth}%` : '', Number.isInteger(p.batteryCycles) ? `${ar ? 'عدد دورات الشحن' : 'Battery cycles'} ${p.batteryCycles}` : ''] : [];
+    const specs = [p.chip, p.cpu, p.ram, p.storage, p.screen, p.network, ...battery].filter(Boolean);
     return `<main class="seo-page"><p><a href="${esc(pathFor(lang, '/'))}">${esc(brand)}</a></p><h1>${esc(p.name)}${p.chip ? ` · ${esc(p.chip)}` : ''}</h1><p>${esc(ar ? p.descriptionAr : p.descriptionEn)}</p><ul>${specs.map((s) => `<li>${esc(s)}</li>`).join('')}</ul><p>${esc(priceText(cfg.startPrice(p)))}</p></main>`;
   }
   if (page.kind === 'category') return `<main class="seo-page"><h1>${esc(ar ? page.category.labelAr : page.category.labelEn)} — ${esc(brand)}</h1>${list(page.products)}</main>`;

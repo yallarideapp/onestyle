@@ -44,7 +44,7 @@ npm run dev            # http://127.0.0.1:8788 بقيم تجريبية من test
 
 ```sh
 npm test               # فحوصات سريعة بدون سيرفر: الأسعار، العناوين، تنظيف المحتوى
-npm run test:api       # 120 فحص على الطلبات واللوحة (بده python3)
+npm run test:api       # 125 فحص على الطلبات واللوحة (بده python3)
 npm run test:accounts  # 57 فحص على حسابات الزبائن وروابط كلمة السر
 npm run test:browser   # الموقع كامل بمتصفح (بده: npm i -D playwright && npx playwright install chromium)
 npm run test:widths    # من عرض 320 لـ 1440، عربي وإنجليزي، بدون تمرير جانبي

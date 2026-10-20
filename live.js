@@ -223,6 +223,10 @@
       }
     } finally { publishing = null; if (done && publishAgain) live.persist(); }
   }
+  // Fresh content after a failed order. A signed-in admin keeps the full content (hidden devices,
+  // stock counts), so a later save from the admin can't drop them.
+  const refreshContent = () => request(admin.signedIn ? '/api/admin/content' : '/api/content')
+    .then((d) => { live.version = d.version; if (d.content.slugs) setSlugs(d.content.slugs); app.applyPublished(d.content); }).catch(() => {});
   async function reloadPublished() {
     const data = await request('/api/admin/content');
     live.version = data.version;
@@ -389,6 +393,7 @@
     if (/^\/(reset|admin-reset)\//.test(path)) return t('كلمة سر جديدة', 'New password');
     const product = path.match(/^\/product\/(.+)$/);
     if (product && window.StoreDemo) { const p = window.StoreDemo.getAllProducts().find((x) => x.id === decode(product[1])); if (p) return `${p.name}${p.chip ? ` ${p.chip}` : ''}`; }
+    if (path === '/shop/used-like-new') return t('مستعمل كالجديد', 'Used — like new');
     const category = path.match(/^\/shop\/(.+)$/);
     if (category && window.StoreDemo) { const c = window.StoreDemo.getCategories().find((x) => x.id === decode(category[1])); if (c) return lang() === 'ar' ? c.labelAr : c.labelEn; }
     return null;
@@ -429,15 +434,6 @@
       const token = pendingReset && pendingReset.kind === reset[1] ? pendingReset.token : '';
       return resetPage(reset[1] === 'admin-reset', token);
     }
-    return null;
-  };
-  live.title = (path) => {
-    if (path === '/account') return t('حسابي', 'My account');
-    if (/^\/(reset|admin-reset)\//.test(path)) return t('كلمة سر جديدة', 'New password');
-    const product = path.match(/^\/product\/(.+)$/);
-    if (product && window.StoreDemo) { const p = window.StoreDemo.getAllProducts().find((x) => x.id === decode(product[1])); if (p) return `${p.name}${p.chip ? ` ${p.chip}` : ''}`; }
-    const category = path.match(/^\/shop\/(.+)$/);
-    if (category && window.StoreDemo) { const c = window.StoreDemo.getCategories().find((x) => x.id === decode(category[1])); if (c) return lang() === 'ar' ? c.labelAr : c.labelEn; }
     return null;
   };
 
@@ -613,10 +609,10 @@
       app.openModal(`${app.modalHead(t('وصلنا طلبك', 'We got your order'))}<div class="order-success"><h3>${t('شكراً! رقم طلبك:', 'Thank you! Your order number:')}</h3><code dir="ltr">${esc(result.number)}</code><p>${t('بنتصل فيك قريباً لنأكد الطلب والتوصيل. الدفع عند الاستلام.', 'We will call you soon to confirm the order and delivery. Payment is cash on delivery.')}</p><p><strong>${t('الإجمالي', 'Total')}: ${app.money(result.total)}</strong></p><a class="button primary full" href="${esc(whatsappHref(whatsappText(priced.lines, result.number)))}" target="_blank" rel="noopener noreferrer">${t('ابعت رقم الطلب على واتساب', 'Send the order number on WhatsApp')}</a>${shopper.signedIn ? `<a class="text-button full" href="#/account">${t('شوف طلباتي', 'View my orders')}</a>` : ''}<button class="text-button full" type="button" data-action="close-modal">${t('كمّل تصفّح', 'Continue browsing')}</button></div>`, 'drawer');
     } catch (error) {
       if (['price-changed', 'sold-out', 'unknown'].includes(error.code)) {
-        await request('/api/content').then((d) => { live.version = d.version; app.applyPublished(d.content); }).catch(() => {});
+        await refreshContent();
         priceBag();
       }
-      if (error.code === 'orders-off') await request('/api/content').then((d) => app.applyPublished(d.content)).catch(() => {});
+      if (error.code === 'orders-off') await refreshContent();
       button.disabled = false; button.textContent = t('أرسل الطلب', 'Place order');
       show(error.code);
     }

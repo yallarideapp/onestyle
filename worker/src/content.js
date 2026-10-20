@@ -60,9 +60,10 @@ export async function getContent(env, { fresh = false } = {}) {
 }
 export function dropCache() { cache = null; }
 
-// Shoppers never see hidden devices, or the address history.
+// Shoppers never see hidden devices, the address history, or the admin's stock counts
+// (the in-stock / out-of-stock status itself stays public).
 export const publicCopy = (content) => {
-  const catalog = content.catalog.filter((p) => !p.hidden);
+  const catalog = content.catalog.filter((p) => !p.hidden).map(({ stockCount, ...p }) => p);
   return { settings: content.settings, catalog, slugs: Object.fromEntries(catalog.map((p) => [p.id, content.slugs?.[p.id]?.slug || slugify(p.id)])) };
 };
 
