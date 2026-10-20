@@ -4,8 +4,9 @@ Read `ONESTYLE-CONTEXT.md` first (Arabic): what the site is, its status and the 
 
 ## What this repo is
 
-- The **private source** of the live One Style site on Cloudflare (Workers + Static Assets + D1 + KV).
-- The public GitHub Pages preview (`yallarideapp/onestyle`) is a separate, runtime-only repo. Never push this repo's backend, tests or agent files there.
+- The **source** of the live One Style site on Cloudflare (Workers + Static Assets + D1 + KV).
+- Since 20 Oct 2026 (Jafar's decision) it lives in the public repo `yallarideapp/onestyle`, which also serves the GitHub Pages preview. It moves to the shop's own repo (`onestyle-site`) once that account exists.
+- The Pages workflow (`.github/workflows/deploy.yml`) publishes only the storefront files (`index.html`, `app.js`, `admin.js`, `data.js`, `settings.js`, the CSS files, `assets/`). Keep that list explicit: never publish `worker/`, `tests/`, the guides or this file on Pages.
 - Pull and rebase before any change: Jafar, ChatGPT and Claude all push here.
 
 ## Layout
