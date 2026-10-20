@@ -17,6 +17,7 @@
 |---|---|
 | `index.html`, `app.js`, `admin.js`, `data.js`, `settings.js`, `*.css`, `assets/` | الواجهة نفسها اللي بمعاينة GitHub Pages. لما تنفتح لحالها من الجهاز بتشتغل كمعاينة بدون سيرفر. |
 | `live.js`, `live.css` | بيحوّلوا الواجهة لموقع حقيقي: المحتوى من السيرفر، الطلب، الحسابات، العناوين الحقيقية، دخول اللوحة. بينضافوا بس بنسخة Cloudflare. |
+| `accounts-demo.js` | حسابات تجريبية لمعاينة GitHub Pages بس، بتنحفظ بمتصفح الزائر. ما بتنضاف لنسخة Cloudflare، وما بتشتغل لما تنفتح المعاينة من الجهاز. |
 | `worker/src/` | السيرفر: `index.js` (التوجيه)، `orders.js`، `customer.js` (حسابات الزبائن)، `admin.js` (اللوحة)، `content.js`، `pages.js` (صفحات Google)، `mail.js` و`reset.js` (الإيميل). |
 | `migrations/` | جداول قاعدة البيانات D1. أي تغيير على الجداول بيكون بملف جديد (`0002_…sql`)، مش بتعديل القديم. |
 | `wrangler.jsonc` | إعدادات Cloudflare. الأرقام `REPLACE_WITH_…` بتنحط من الدليل، والأسرار ما بتنكتب هون أبداً. |
@@ -48,6 +49,7 @@ npm run test:api       # 125 فحص على الطلبات واللوحة (بده
 npm run test:accounts  # 57 فحص على حسابات الزبائن وروابط كلمة السر
 npm run test:browser   # الموقع كامل بمتصفح (بده: npm i -D playwright && npx playwright install chromium)
 npm run test:widths    # من عرض 320 لـ 1440، عربي وإنجليزي، بدون تمرير جانبي
+npm run test:preview   # حسابات المعاينة التجريبية بمتصفح
 ```
 
 - كل اختبار بيشغّل نسخة محلية جديدة من قاعدة البيانات والسيرفر، وبيطفيهم بعدها.

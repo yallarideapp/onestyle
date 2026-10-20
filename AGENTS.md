@@ -16,6 +16,9 @@ Read `ONESTYLE-CONTEXT.md` first (Arabic): what the site is, its status and the 
 - Live layer: `live.js` and `live.css`.
   - `tools/build.mjs` adds them to `dist/` only.
   - `live.js` sets `window.OneStyleLive`, and every live hook in `app.js` and `admin.js` is guarded by it.
+- Preview only: `accounts-demo.js` gives the GitHub Pages preview shopper accounts kept in the visitor's browser (sign up, sign in, profile, password, My orders, a reset link shown on screen, a demo account).
+  - It sets `window.OneStylePreviewAccounts`; `app.js` uses it through `acct` (header and menu link, `#/account` and `#/reset/` routes, checkout prefill, the order's `account`).
+  - It does nothing on the live site or from disk (file://), and `tools/build.mjs` leaves it out of `dist/`. It borrows the account styles from `live.css`.
 - Server: `worker/src/*.js`; schema `migrations/*.sql`; config `wrangler.jsonc`.
 - Generated, never edited and never committed: `dist/` and `worker/src/generated/shop-rules.js`. The latter is built from `data.js` + `settings.js`, so the server prices and cleans content with the storefront's own functions.
 
@@ -72,6 +75,7 @@ npm run test:api         # orders + admin abuse tests on a fresh local Worker
 npm run test:accounts    # shopper accounts and reset links
 npm run test:browser     # full flow in a browser (Playwright)
 npm run test:widths      # 320–1440 px, ar/en, no sideways scrolling
+npm run test:preview     # the Pages preview's demo accounts in a browser (Playwright)
 ```
 
 - `tests/local/run.sh` starts a fresh local D1/KV, the Worker on :8788 with `tests/local/test.env`, and an email stand-in on :8799, then stops them.

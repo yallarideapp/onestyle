@@ -12,7 +12,8 @@
     "test:api": "sh tests/local/run.sh python3 tests/local/api-abuse.py",
     "test:accounts": "sh tests/local/run.sh python3 tests/local/customer-abuse.py",
     "test:browser": "sh tests/local/run.sh node tests/local/e2e.mjs",
-    "test:widths": "sh tests/local/run.sh node tests/local/sweep.mjs"
+    "test:widths": "sh tests/local/run.sh node tests/local/sweep.mjs",
+    "test:preview": "sh tests/preview/run.sh"
   },
   "devDependencies": {
     "wrangler": "4.140.0"

@@ -26,7 +26,8 @@ await cp(path.join(root, 'assets'), path.join(dist, 'assets'), { recursive: true
 // arrived, in the same order and with the same version tags.
 let html = await readFile(path.join(root, 'index.html'), 'utf8');
 const scripts = [];
-html = html.replace(/[ \t]*<script src="([^"]+)" defer><\/script>\r?\n?/g, (_, src) => { scripts.push(src); return ''; });
+// accounts-demo.js is the preview's browser-only accounts: never part of the live site.
+html = html.replace(/[ \t]*<script src="([^"]+)" defer><\/script>\r?\n?/g, (_, src) => { if (!src.startsWith('accounts-demo.js')) scripts.push(src); return ''; });
 if (!scripts.some((src) => src.startsWith('app.js'))) throw new Error('index.html: app.js not found');
 // Pages live at deeper addresses (/devices/…, /ar/…), so every file is linked from the site root.
 const fromRoot = (src) => (/^(https?:|\/|data:)/.test(src) ? src : `/${src}`);
