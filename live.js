@@ -466,9 +466,9 @@
     const orders = shopper.ordersError ? `<p class="live-alert">${errorText('network')}</p>` : shopper.orders === null ? `<p class="live-note">${t('عم نحمّل الطلبات…', 'Loading orders…')}</p>` : shopper.orders.length
       ? `<ul class="live-orders">${shopper.orders.map((o) => `<li><div class="live-order-head"><strong dir="ltr">${esc(o.id)}</strong><span class="live-status s-${esc(o.status)}">${esc(statusName(o.status))}</span></div><p class="live-note">${esc(dateText(o.date))} · ${o.fulfilment === 'pickup' ? t('استلام من المحل', 'Store collection') : t('توصيل', 'Delivery')}</p><ul>${o.items.map((i) => `<li><span dir="ltr">${esc(i.name)}</span> × ${i.quantity}<small dir="ltr">${esc(i.variant)}</small></li>`).join('')}</ul><p class="live-order-total">${t('المجموع', 'Total')}: <strong>${esc(app.money(o.total))}</strong></p></li>`).join('')}</ul>`
       : `<p class="live-note">${t('لسا ما في طلبات على حسابك.', 'No orders on your account yet.')}</p>`;
-    return `<section class="section-width live-account">${head}${alerts(shopper)}<div class="live-grid">
+    return `<section class="section-width live-account">${head}${shopper.lastForm === 'password' ? '' : alerts(shopper)}<div class="live-grid">
       <div class="live-card"><h2>${t('بياناتي', 'My details')}</h2><p class="live-note" dir="ltr">${esc(c.email)}</p><form data-live-form="profile">${field(t('الاسم', 'Name'), 'name', { value: c.name, auto: 'name', min: 2, max: 80 })}${field(t('رقم الموبايل', 'Mobile'), 'phone', { type: 'tel', value: c.phone, auto: 'tel', dir: 'ltr', max: 20, required: false })}<button class="button primary full" type="submit">${t('احفظ', 'Save')}</button></form>
-        <details class="live-details"><summary>${t('تغيير كلمة السر', 'Change password')}</summary><form data-live-form="password">${field(t('كلمة السر الحالية', 'Current password'), 'current', { type: 'password', auto: 'current-password' })}${field(t('كلمة السر الجديدة (8 خانات أو أكثر وفيها حرف)', 'New password (8+ characters, with a letter)'), 'password', { type: 'password', auto: 'new-password', min: 8 })}${field(t('أعد كلمة السر', 'Repeat the password'), 'repeat', { type: 'password', auto: 'new-password', min: 8 })}<button class="button primary full" type="submit">${t('غيّر كلمة السر', 'Change password')}</button></form></details>
+        <details class="live-details"${shopper.lastForm === 'password' ? ' open' : ''}><summary>${t('تغيير كلمة السر', 'Change password')}</summary><form data-live-form="password">${field(t('كلمة السر الحالية', 'Current password'), 'current', { type: 'password', auto: 'current-password' })}${field(t('كلمة السر الجديدة (8 خانات أو أكثر وفيها حرف)', 'New password (8+ characters, with a letter)'), 'password', { type: 'password', auto: 'new-password', min: 8 })}${field(t('أعد كلمة السر', 'Repeat the password'), 'repeat', { type: 'password', auto: 'new-password', min: 8 })}${shopper.lastForm === 'password' ? alerts(shopper) : ''}<button class="button primary full" type="submit">${t('غيّر كلمة السر', 'Change password')}</button></form></details>
         <button class="text-button" type="button" data-live="logout">${t('تسجيل خروج', 'Sign out')}</button></div>
       <div class="live-card"><h2>${t('طلباتي', 'My orders')}</h2>${orders}</div></div></section>`;
   }
@@ -626,8 +626,20 @@
     const v = (name) => (form.elements.namedItem(name)?.value ?? '');
     const button = form.querySelector('[type=submit]');
     const state = kind.startsWith('admin') ? admin : shopper;
-    state.error = ''; state.message = '';
-    const repeatOk = () => { if (form.elements.namedItem('repeat') && v('repeat') !== v('password')) { state.error = errorText('mismatch'); app.render(); return false; } return true; };
+    state.error = ''; state.message = ''; state.lastForm = kind;
+    // After an error the page is drawn again: keep what was typed (never passwords) and show the message.
+    const typed = [...form.elements].filter((el) => el.name && 'value' in el && !/^(password|submit|button|hidden|file)$/.test(el.type)).map((el) => [el.name, el.value]);
+    const redraw = () => {
+      app.render();
+      const next = document.querySelector(`form[data-live-form="${kind}"]`);
+      if (!state.error) { const done = next && next.querySelector('.live-success'); if (done) done.scrollIntoView({ block: 'center' }); return; }
+      if (!next) return;
+      for (const [name, value] of typed) { const el = next.elements.namedItem(name); if (el && 'value' in el && !el.value) el.value = value; }
+      const box = next.querySelector('.live-alert') || document.querySelector('.live-alert');
+      if (box) box.scrollIntoView({ block: 'nearest' });
+      const first = next.querySelector('input[type=password]'); if (first) first.focus({ preventScroll: true });
+    };
+    const repeatOk = () => { if (form.elements.namedItem('repeat') && v('repeat') !== v('password')) { state.error = errorText('mismatch'); redraw(); return false; } return true; };
     if (button) button.disabled = true;
     try {
       if (kind === 'checkout') { if (button) button.disabled = false; return submitCheckout(form); }
@@ -651,7 +663,7 @@
       state.error = errorText(error.code);
       if (kind === 'admin-password') { const box = form.querySelector('.live-alert'); if (box) { box.textContent = state.error; box.hidden = false; } return; }
     } finally { if (button && button.isConnected) button.disabled = false; }
-    app.render();
+    redraw();
   }
 
   document.addEventListener('submit', (event) => {
