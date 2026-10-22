@@ -52,7 +52,7 @@ s, j, _, _ = req('GET', '/api/admin/status'); check('status: not set up', j == {
 sip = {'CF-Connecting-IP': f'10.249.{random.randint(0, 255)}.{random.randint(1, 254)}'}
 codes = [req('POST', '/api/admin/setup', {'code': f'wrong-code-{i}', 'password': PASS}, sip)[0] for i in range(6)]
 check('setup locks after 5 wrong codes from one IP', codes[:5] == [403] * 5 and codes[5] == 429, codes)
-s, j, h, _ = req('POST', '/api/admin/setup', {'code': CODE, 'password': 'only-fifteen-ch'}); check('setup with a 15-character password refused', s == 400 and j['error'] == 'weak-password', (s, j))
+s, j, h, _ = req('POST', '/api/admin/setup', {'code': CODE, 'password': 'nine-char'}); check('setup with a 9-character password refused', s == 400 and j['error'] == 'weak-admin-password', (s, j))
 s, j, h, _ = req('POST', '/api/admin/setup', {'code': CODE, 'password': PASS}, {'Origin': 'https://evil.example'}); check('setup from a foreign Origin refused', s == 403, s)
 s, j, h, _ = req('POST', '/api/admin/setup', {'code': CODE, 'password': PASS}); A = {'Cookie': cookie(h)}
 sc = h.get('Set-Cookie', '')
@@ -237,9 +237,9 @@ s, j, h, _ = req('POST', '/api/admin/forgot', {'email': 'attacker@example.test'}
 new = mails()[before:]
 check('admin reset ignores any address sent and mails only ADMIN_EMAIL', s == 200 and new and all(m['body']['to'] == ['owner@example.test'] for m in new), (s, new))
 link = re.search(r'#/admin-reset/([a-f0-9]{64})', new[-1]['body']['text']).group(1) if new else ''
-s, j, h, _ = req('POST', '/api/admin/reset', {'token': link, 'password': 'short'}); check('admin reset with a weak password refused', s == 400 and j['error'] == 'weak-password', (s, j))
+s, j, h, _ = req('POST', '/api/admin/reset', {'token': link, 'password': 'short'}); check('admin reset with a weak password refused', s == 400 and j['error'] == 'weak-admin-password', (s, j))
 s, j, h, _ = req('POST', '/api/admin/reset', {'token': 'a' * 64, 'password': 'onestyle-admin-pass-2030'}); check('made-up admin reset link refused', s == 400 and j['error'] == 'reset-expired', (s, j))
-NEWPASS = 'onestyle-admin-pass-2031'
+NEWPASS = 'Admin-2031'  # exactly 10 characters: the shortest the admin may use
 s, j, h, _ = req('POST', '/api/admin/reset', {'token': link, 'password': NEWPASS}); A2 = {'Cookie': cookie(h)}
 check('admin reset sets the new password and signs in', s == 200 and 'onestyle_admin=' in A2['Cookie'], (s, j))
 check('older admin sessions end after the reset', req('GET', '/api/admin/orders', headers=A)[0] == 401)

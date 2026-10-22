@@ -25,12 +25,12 @@ await admin.goto(`${BASE}/#/admin`); await admin.waitForSelector('form[data-live
 await admin.fill('input[name=code]', 'wrong-code-0000'); await admin.fill('input[name=password]', PASS); await admin.fill('input[name=repeat]', PASS);
 await admin.click('form[data-live-form="admin-setup"] [type=submit]'); await admin.waitForSelector('.live-alert');
 ok(/رمز|code/i.test(await admin.locator('.live-alert').innerText()), 'wrong setup code is refused');
-await admin.fill('input[name=code]', CODE); await admin.fill('input[name=password]', 'short-password'); await admin.fill('input[name=repeat]', 'short-password');
+await admin.fill('input[name=code]', CODE); await admin.fill('input[name=password]', 'short-pw9'); await admin.fill('input[name=repeat]', 'short-pw9');
 await admin.click('form[data-live-form="admin-setup"] [type=submit]'); await admin.waitForTimeout(500);
-ok(await admin.locator('form[data-live-form="admin-setup"]').count() === 1, 'a 14-character password is refused');
+ok(await admin.locator('form[data-live-form="admin-setup"]').count() === 1, 'a 9-character password is refused');
 await admin.fill('input[name=password]', PASS); await admin.fill('input[name=repeat]', PASS);
 await admin.click('form[data-live-form="admin-setup"] [type=submit]');
-await admin.waitForSelector('.admin-shell'); ok(true, 'setup code + 16+ password opens the admin');
+await admin.waitForSelector('.admin-shell'); ok(true, 'setup code + 10+ password opens the admin');
 ok(await admin.locator('[data-live="admin-logout"]').count() === 1, 'admin shows a sign-out button');
 // ordering on
 await admin.goto(`${BASE}/#/admin/settings`); await admin.waitForSelector('form[data-admin-settings-form="checkout"]', { state: 'attached' });

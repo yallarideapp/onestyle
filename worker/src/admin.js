@@ -1,6 +1,6 @@
 // The shop's single admin: first setup with SETUP_CODE, sign-in, password, sessions,
 // publishing content, photo uploads and orders. Reset by email goes only to ADMIN_EMAIL.
-import { HttpError, json, readJson, readBytes, checkOrigin, sha256, randomHex, safeEqual, takeSlots, clearSlots, ipKey, now, readCookie, TOKEN, ITERATIONS, strongEnough, passwordHash } from './util.js';
+import { HttpError, json, readJson, readBytes, checkOrigin, sha256, randomHex, safeEqual, takeSlots, clearSlots, ipKey, now, readCookie, TOKEN, ITERATIONS, adminPasswordProblem, passwordHash } from './util.js';
 import { getContent, sanitizeContent, dropCache } from './content.js';
 import { listOrders, updateOrder } from './orders.js';
 import { resetReady } from './mail.js';
@@ -56,7 +56,7 @@ export async function handleAdmin(request, env, ctx, url, path) {
     await takeSlots(env, [[key, 5, 900]]);
     if (typeof body.code !== 'string' || !safeEqual(body.code.trim(), setupCode)) throw new HttpError(403, 'bad-code');
     await clearSlots(env, key);
-    if (!strongEnough(body.password)) throw new HttpError(400, 'weak-password');
+    if (adminPasswordProblem(body.password)) throw new HttpError(400, adminPasswordProblem(body.password));
     const salt = randomHex(16);
     const hash = await passwordHash(body.password, salt, ITERATIONS);
     const res = await env.DB.prepare('INSERT OR IGNORE INTO admin (id, password_hash, salt, iterations, generation, updated_at) VALUES (1, ?, ?, ?, 1, ?)').bind(hash, salt, ITERATIONS, new Date().toISOString()).run();
@@ -107,7 +107,7 @@ export async function handleAdmin(request, env, ctx, url, path) {
     await takeSlots(env, [[await ipKey(request, 'reset-try'), 10, 900]]);
     const token = typeof body.token === 'string' ? body.token : '';
     if (!TOKEN.test(token)) throw new HttpError(400, 'reset-expired');
-    if (!strongEnough(body.password)) throw new HttpError(400, 'weak-password');
+    if (adminPasswordProblem(body.password)) throw new HttpError(400, adminPasswordProblem(body.password));
     const reset = await findReset(env, 'admin', token);
     const row = await adminRow(env);
     if (!reset || !row || row.generation !== reset.generation) throw new HttpError(400, 'reset-expired');
@@ -133,7 +133,7 @@ export async function handleAdmin(request, env, ctx, url, path) {
     const current = await passwordHash(typeof body.current === 'string' ? body.current.slice(0, 200) : '', row.salt, row.iterations);
     if (!safeEqual(current, row.password_hash)) throw new HttpError(403, 'bad-password');
     await clearSlots(env, key);
-    if (!strongEnough(body.password)) throw new HttpError(400, 'weak-password');
+    if (adminPasswordProblem(body.password)) throw new HttpError(400, adminPasswordProblem(body.password));
     const salt = randomHex(16);
     const hash = await passwordHash(body.password, salt, ITERATIONS);
     const generation = row.generation + 1;

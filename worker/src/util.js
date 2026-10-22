@@ -1,3 +1,4 @@
+import { passwords } from './generated/shop-rules.js';
 // Small helpers shared by every API route.
 
 export class HttpError extends Error {
@@ -81,10 +82,13 @@ export function safeEqual(a, b) {
 }
 
 // PBKDF2-SHA-256. 20,000 rounds keep a sign-in (and a password change, which hashes
-// twice) inside the free plan's 10 ms of CPU; the 16-character minimum makes up for it.
-// Each stored row keeps its own round count, so older hashes still verify.
+// twice) inside the free plan's 10 ms of CPU. Each stored row keeps its own round count,
+// so older hashes still verify.
 export const ITERATIONS = 20000;
-export const strongEnough = (value) => typeof value === 'string' && value.length >= 16 && value.length <= 200;
+// Minimums (passwords.js, shared with the forms): shoppers 8 characters with a letter and
+// not a common password; the admin 10. Each returns null, or the error code to send back.
+export const customerPasswordProblem = (value) => passwords.customerProblem(value);
+export const adminPasswordProblem = (value) => passwords.adminProblem(value);
 export async function passwordHash(password, saltHex, iterations) {
   const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']);
   const salt = new Uint8Array(saltHex.match(/../g).map((pair) => parseInt(pair, 16)));

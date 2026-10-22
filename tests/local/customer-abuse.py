@@ -37,7 +37,10 @@ def order(**over):
 tag = secrets.token_hex(4)
 ea, eb = f'alice.{tag}@example.test', f'bob.{tag}@example.test'
 PA, PB = 'alice-long-password-1', 'bob-long-password-22'
-s, j, h, _ = req('POST', '/api/customer/register', {'name': 'Alice', 'email': ea, 'password': 'short-pass-15ch'}); check('15-character password refused', s == 400 and j['error'] == 'weak-password', (s, j))
+for pw, err, label in [('abc1234', 'weak-password', '7-character password refused'), ('12345678', 'weak-password', 'digits-only password refused'), ('Password1', 'common-password', 'common password refused, whatever the case')]:
+    s, j, h, _ = req('POST', '/api/customer/register', {'name': 'Alice', 'email': ea, 'password': pw}); check(label, s == 400 and j['error'] == err, (s, j))
+s, j, h, _ = req('POST', '/api/customer/register', {'name': 'Carol', 'email': f'carol.{tag}@example.test', 'password': 'ahmad123'}); check('8 characters with letters accepted (ahmad123)', s == 201, (s, j))
+s, j, h, _ = req('POST', '/api/customer/login', {'email': f'carol.{tag}@example.test', 'password': 'ahmad123'}); check('ahmad123 signs in', s == 200, (s, j))
 s, j, h, _ = req('POST', '/api/customer/register', {'name': 'Alice', 'email': 'not-an-email', 'password': PA}); check('bad email refused', s == 400 and j['error'] == 'bad-email', (s, j))
 s, j, h, _ = req('POST', '/api/customer/register', {'name': 'Alice', 'email': ea, 'password': PA, 'phone': '12345'}); check('bad mobile at sign-up refused', s == 400 and j['error'] == 'bad-phone', (s, j))
 s, j, h, _ = req('POST', '/api/customer/register', {'name': 'Alice', 'email': ea, 'password': PA}, {'Origin': 'https://evil.example'}); check('register from a foreign Origin refused', s == 403, (s, j))

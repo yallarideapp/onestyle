@@ -22,8 +22,12 @@ ok(/تسجيل الدخول|Sign in/.test(await text('.live-account h1')), 'acco
 await p.click('[data-acct="tab"][data-tab="create"]');
 const reg = 'form[data-acct-form="register"]';
 await p.fill(`${reg} [name=name]`, 'جعفر'); await p.fill(`${reg} [name=email]`, 'Jafar.Test@Example.com'); await p.fill(`${reg} [name=phone]`, '٠٧٩١٢٣٤٥٦٧');
-await p.fill(`${reg} [name=password]`, 'short-pass'); await p.fill(`${reg} [name=repeat]`, 'short-pass'); await p.click(`${reg} [type=submit]`); await p.waitForTimeout(400);
-ok(/16/.test(await text('.live-alert')), 'a 10-character password is refused');
+await p.fill(`${reg} [name=password]`, 'abc1234'); await p.fill(`${reg} [name=repeat]`, 'abc1234'); await p.click(`${reg} [type=submit]`); await p.waitForTimeout(400);
+ok(/8/.test(await text('.live-alert')), 'a 7-character password is refused');
+await p.fill(`${reg} [name=password]`, '12345678'); await p.fill(`${reg} [name=repeat]`, '12345678'); await p.click(`${reg} [type=submit]`); await p.waitForTimeout(400);
+ok(/حرف|letter/.test(await text('.live-alert')), 'digits only are refused');
+await p.fill(`${reg} [name=password]`, 'Password1'); await p.fill(`${reg} [name=repeat]`, 'Password1'); await p.click(`${reg} [type=submit]`); await p.waitForTimeout(400);
+ok(/مشهورة|common/.test(await text('.live-alert')), 'a common password is refused');
 await p.fill(`${reg} [name=password]`, 'onestyle-preview-pass-1'); await p.fill(`${reg} [name=repeat]`, 'onestyle-preview-pass-1'); await p.click(`${reg} [type=submit]`);
 await p.waitForSelector('form[data-acct-form="profile"]');
 ok((await text('.live-account .live-note[dir=ltr]')) === 'jafar.test@example.com', 'account made; email kept in lower case');

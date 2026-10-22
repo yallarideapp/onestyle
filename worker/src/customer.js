@@ -1,6 +1,6 @@
 // Shopper accounts: sign-up, sign-in, profile, password, My orders and reset by email.
 // Separate from the single shop admin (admin.js): different cookie, path and tables.
-import { HttpError, json, readJson, checkOrigin, sha256, randomHex, safeEqual, takeSlots, ipKey, now, readCookie, TOKEN, normaliseMobile, ITERATIONS, strongEnough, passwordHash } from './util.js';
+import { HttpError, json, readJson, checkOrigin, sha256, randomHex, safeEqual, takeSlots, ipKey, now, readCookie, TOKEN, normaliseMobile, ITERATIONS, customerPasswordProblem, passwordHash } from './util.js';
 import { resetReady } from './mail.js';
 import { issueReset, findReset, clearResets, sendResetEmail } from './reset.js';
 import { getContent } from './content.js';
@@ -102,7 +102,7 @@ export async function handleCustomer(request, env, ctx, url, path) {
     await slot(request, env, 'register-day', 20, 86400);
     const name = nameValue(body.name);
     const email = emailValue(body.email);
-    if (!strongEnough(body.password)) throw new HttpError(400, 'weak-password');
+    if (customerPasswordProblem(body.password)) throw new HttpError(400, customerPasswordProblem(body.password));
     const phone = phoneValue(body.phone);
     const salt = randomHex(16);
     const hash = await passwordHash(body.password, salt, ITERATIONS);
@@ -163,7 +163,7 @@ export async function handleCustomer(request, env, ctx, url, path) {
     await takeSlots(env, [[await ipKey(request, 'reset-try'), 10, 900]]);
     const token = typeof body.token === 'string' ? body.token : '';
     if (!TOKEN.test(token)) throw new HttpError(400, 'reset-expired');
-    if (!strongEnough(body.password)) throw new HttpError(400, 'weak-password');
+    if (customerPasswordProblem(body.password)) throw new HttpError(400, customerPasswordProblem(body.password));
     const row = await findReset(env, 'customer', token);
     if (!row) throw new HttpError(400, 'reset-expired');
     const account = await env.DB.prepare('SELECT id, name, email, phone, generation FROM customers WHERE id = ?').bind(row.account_id).first();
@@ -200,7 +200,7 @@ export async function handleCustomer(request, env, ctx, url, path) {
   if (path === 'password' && method === 'POST') {
     const body = await readJson(request, 4096);
     await slot(request, env, 'password', 5, 900);
-    if (!strongEnough(body.password)) throw new HttpError(400, 'weak-password');
+    if (customerPasswordProblem(body.password)) throw new HttpError(400, customerPasswordProblem(body.password));
     const account = await env.DB.prepare('SELECT id, password_hash, salt, iterations, generation FROM customers WHERE id = ?').bind(customer.id).first();
     if (!account) throw new HttpError(401, 'signed-out');
     const validCurrent = typeof body.current === 'string' && body.current.length <= 200;

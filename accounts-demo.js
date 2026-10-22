@@ -38,7 +38,8 @@
     if (/^7\d{8}$/.test(local)) local = '0' + local;
     return /^07[789]\d{7}$/.test(local) ? local : null;
   }
-  const strongEnough = (p) => typeof p === 'string' && p.length >= 16 && p.length <= 200;
+  // Same rules as the live site (passwords.js): 8+ characters with a letter, not a common password.
+  const passwordProblem = (p) => window.OneStylePasswords ? window.OneStylePasswords.customerProblem(p) : (typeof p === 'string' && p.length >= 8 && p.length <= 200 && /\p{L}/u.test(p) ? null : 'weak-password');
 
   // ---------- storage (this browser only) ----------
   const empty = () => ({ v: 1, customers: [], session: null, resets: [] });
@@ -76,7 +77,8 @@
     'bad-name': t('اكتب اسم من حرفين لـ 80 حرف.', 'Enter a name of 2 to 80 characters.'),
     'bad-email': t('الإيميل مش صحيح.', 'That email is not valid.'),
     'bad-phone': t('رقم الموبايل لازم يكون أردني، مثل 0791234567.', 'Use a Jordanian mobile number, like 0791234567.'),
-    'weak-password': t('كلمة السر لازم تكون 16 حرف أو أكثر.', 'The password must be 16 characters or more.'),
+    'weak-password': t('كلمة السر لازم تكون 8 خانات أو أكثر، وفيها حرف واحد على الأقل.', 'The password needs at least 8 characters, including at least one letter.'),
+    'common-password': t('كلمة السر هاي مشهورة وسهل حدا يخمّنها. اختار غيرها.', 'That password is too common and easy to guess. Choose another one.'),
     'mismatch': t('كلمتين السر مش متطابقات.', 'The passwords do not match.'),
     'email-in-use': t('الإيميل مستعمل. سجّل دخول أو استعمل إيميل ثاني.', 'That email is in use. Sign in or use another email.'),
     'bad-credentials': t('الإيميل أو كلمة السر غلط.', 'Wrong email or password.'),
@@ -94,7 +96,7 @@
     if (name.length < 2) throw code('bad-name');
     if (!email) throw code('bad-email');
     if (phone === null) throw code('bad-phone');
-    if (!strongEnough(f.password)) throw code('weak-password');
+    if (passwordProblem(f.password)) throw code(passwordProblem(f.password));
     if (f.password !== f.repeat) throw code('mismatch');
     const salt = randomHex(16), hash = await hashPassword(f.password, salt, ROUNDS);
     await write((s) => {
@@ -123,7 +125,7 @@
   async function changePassword(f) {
     const me = current(); if (!me) throw code('signed-out');
     if (!sameText(await hashPassword(String(f.current || ''), me.salt, me.iterations), me.hash)) throw code('bad-current');
-    if (!strongEnough(f.password)) throw code('weak-password');
+    if (passwordProblem(f.password)) throw code(passwordProblem(f.password));
     if (f.password !== f.repeat) throw code('mismatch');
     await setPassword(me.id, me.generation, f.password);
   }
@@ -150,7 +152,7 @@
     ui.ok = found ? '' : t('ما في حساب بهالإيميل على هذا المتصفح.', 'There is no account with that email in this browser.');
   }
   async function reset(f) {
-    if (!strongEnough(f.password)) throw code('weak-password');
+    if (passwordProblem(f.password)) throw code(passwordProblem(f.password));
     if (f.password !== f.repeat) throw code('mismatch');
     const tokenHash = isHex(ui.token, 64) ? await sha256(ui.token) : '';
     const r = read().resets?.find((x) => x.hash === tokenHash && x.expires > Date.now());
@@ -199,7 +201,7 @@
       const create = ui.tab === 'create';
       const tabs = `<div class="live-tabs" role="tablist"><button type="button" role="tab" aria-selected="${!create}" data-acct="tab" data-tab="signin">${t('تسجيل الدخول', 'Sign in')}</button><button type="button" role="tab" aria-selected="${create}" data-acct="tab" data-tab="create">${t('حساب جديد', 'Create account')}</button></div>`;
       const form = create
-        ? `<form data-acct-form="register" novalidate>${field(t('الاسم', 'Name'), 'name', { auto: 'name', min: 2, max: 80 })}${field(t('الإيميل', 'Email'), 'email', { type: 'email', auto: 'email', dir: 'ltr', max: 254 })}${field(t('رقم الموبايل (اختياري)', 'Mobile (optional)'), 'phone', { type: 'tel', auto: 'tel', dir: 'ltr', max: 20, required: false })}${field(t('كلمة السر (16 حرف أو أكثر)', 'Password (16+ characters)'), 'password', { type: 'password', auto: 'new-password', min: 16 })}${field(t('أعد كلمة السر', 'Repeat the password'), 'repeat', { type: 'password', auto: 'new-password', min: 16 })}${alerts()}<button class="button primary full" type="submit"${busy()}>${t('اعمل الحساب', 'Create the account')}</button></form>`
+        ? `<form data-acct-form="register" novalidate>${field(t('الاسم', 'Name'), 'name', { auto: 'name', min: 2, max: 80 })}${field(t('الإيميل', 'Email'), 'email', { type: 'email', auto: 'email', dir: 'ltr', max: 254 })}${field(t('رقم الموبايل (اختياري)', 'Mobile (optional)'), 'phone', { type: 'tel', auto: 'tel', dir: 'ltr', max: 20, required: false })}${field(t('كلمة السر (8 خانات أو أكثر وفيها حرف)', 'Password (8+ characters, with a letter)'), 'password', { type: 'password', auto: 'new-password', min: 8 })}${field(t('أعد كلمة السر', 'Repeat the password'), 'repeat', { type: 'password', auto: 'new-password', min: 8 })}${alerts()}<button class="button primary full" type="submit"${busy()}>${t('اعمل الحساب', 'Create the account')}</button></form>`
         : `<form data-acct-form="login" novalidate>${field(t('الإيميل', 'Email'), 'email', { type: 'email', auto: 'email', dir: 'ltr', max: 254 })}${field(t('كلمة السر', 'Password'), 'password', { type: 'password', auto: 'current-password' })}${alerts()}<button class="button primary full" type="submit"${busy()}>${t('ادخل', 'Sign in')}</button><button class="text-button" type="button" data-acct="tab" data-tab="forgot">${t('نسيت كلمة السر؟', 'Forgot your password?')}</button></form>`;
       return section(`${head}<div class="live-card">${tabs}${form}<p class="live-note">${t('الحساب بيحفظ طلباتك وبيعبّي اسمك ورقمك عند الطلب. بتقدر تطلب كضيف كمان.', 'An account keeps your orders and fills in your name and number at checkout. You can also order as a guest.')}</p>
         <button class="button full" type="button" data-acct="sample"${busy()}>${t('جرّب حساب العرض', 'Try the demo account')}</button>${demoNote()}</div>`);
@@ -211,15 +213,15 @@
       : `<p class="live-note">${t('لسا ما في طلبات على حسابك.', 'No orders on your account yet.')}</p>`;
     return section(`${head}${alerts()}<div class="live-grid">
       <div class="live-card"><h2>${t('بياناتي', 'My details')}</h2><p class="live-note" dir="ltr">${esc(me.email)}</p><form data-acct-form="profile" novalidate>${field(t('الاسم', 'Name'), 'name', { value: me.name, auto: 'name', min: 2, max: 80 })}${field(t('رقم الموبايل', 'Mobile'), 'phone', { type: 'tel', value: me.phone, auto: 'tel', dir: 'ltr', max: 20, required: false })}<button class="button primary full" type="submit"${busy()}>${t('احفظ', 'Save')}</button></form>
-        <details class="live-details"><summary>${t('تغيير كلمة السر', 'Change password')}</summary><form data-acct-form="password" novalidate>${field(t('كلمة السر الحالية', 'Current password'), 'current', { type: 'password', auto: 'current-password' })}${field(t('كلمة السر الجديدة (16 حرف أو أكثر)', 'New password (16+ characters)'), 'password', { type: 'password', auto: 'new-password', min: 16 })}${field(t('أعد كلمة السر', 'Repeat the password'), 'repeat', { type: 'password', auto: 'new-password', min: 16 })}<button class="button primary full" type="submit"${busy()}>${t('غيّر كلمة السر', 'Change the password')}</button></form></details>
+        <details class="live-details"><summary>${t('تغيير كلمة السر', 'Change password')}</summary><form data-acct-form="password" novalidate>${field(t('كلمة السر الحالية', 'Current password'), 'current', { type: 'password', auto: 'current-password' })}${field(t('كلمة السر الجديدة (8 خانات أو أكثر وفيها حرف)', 'New password (8+ characters, with a letter)'), 'password', { type: 'password', auto: 'new-password', min: 8 })}${field(t('أعد كلمة السر', 'Repeat the password'), 'repeat', { type: 'password', auto: 'new-password', min: 8 })}<button class="button primary full" type="submit"${busy()}>${t('غيّر كلمة السر', 'Change the password')}</button></form></details>
         <button class="text-button" type="button" data-acct="logout">${t('تسجيل خروج', 'Sign out')}</button>${demoNote()}</div>
       <div class="live-card"><h2>${t('طلباتي', 'My orders')}</h2>${orders}</div></div>`);
   }
   function resetPage() {
     const title = `<h1>${t('كلمة سر جديدة', 'New password')}</h1>`;
     if (!ui.token) return section(`<div class="live-card">${title}<p class="live-alert">${esc(message('reset-expired'))}</p><a class="text-button" href="#/account">${t('رجوع لتسجيل الدخول', 'Back to sign in')}</a></div>`);
-    return section(`<div class="live-card">${title}<p class="live-note">${t('اختار كلمة سر 16 حرف أو أكثر.', 'Choose a password of 16 characters or more.')}</p>
-      <form data-acct-form="reset" novalidate>${field(t('كلمة السر الجديدة', 'New password'), 'password', { type: 'password', auto: 'new-password', min: 16 })}${field(t('أعد كلمة السر', 'Repeat the password'), 'repeat', { type: 'password', auto: 'new-password', min: 16 })}${alerts()}<button class="button primary full" type="submit"${busy()}>${t('احفظ كلمة السر', 'Save the password')}</button></form></div>`);
+    return section(`<div class="live-card">${title}<p class="live-note">${t('اختار كلمة سر 8 خانات أو أكثر وفيها حرف واحد على الأقل.', 'Choose a password of 8 characters or more, with at least one letter.')}</p>
+      <form data-acct-form="reset" novalidate>${field(t('كلمة السر الجديدة', 'New password'), 'password', { type: 'password', auto: 'new-password', min: 8 })}${field(t('أعد كلمة السر', 'Repeat the password'), 'repeat', { type: 'password', auto: 'new-password', min: 8 })}${alerts()}<button class="button primary full" type="submit"${busy()}>${t('احفظ كلمة السر', 'Save the password')}</button></form></div>`);
   }
 
   // ---------- events ----------

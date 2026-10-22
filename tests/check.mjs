@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { data, cfg } from '../worker/src/generated/shop-rules.js';
 import { slugify, assignSlugs, sanitizeContent, publicCopy, indexable } from '../worker/src/content.js';
 import { priceOrder, MAX_QTY, MAX_LINES } from '../worker/src/orders.js';
-import { normaliseMobile, strongEnough } from '../worker/src/util.js';
+import { normaliseMobile, customerPasswordProblem, adminPasswordProblem } from '../worker/src/util.js';
 
 let passed = 0;
 const test = (name, fn) => { fn(); passed += 1; console.log(`ok  ${name}`); };
@@ -147,10 +147,16 @@ test('Jordanian mobiles in any common form', () => {
   for (const v of ['12345', '0761234567', '+9627912345678', '']) assert.equal(normaliseMobile(v), null, v);
 });
 
-test('passwords: 16 to 200 characters', () => {
-  assert.equal(strongEnough('x'.repeat(15)), false);
-  assert.equal(strongEnough('x'.repeat(16)), true);
-  assert.equal(strongEnough('x'.repeat(201)), false);
+test('shopper passwords: 8 to 200 characters, a letter, not a common one', () => {
+  for (const v of ['abc1234', '12345678', '٠١٢٣٤٥٦٧٨', 'x'.repeat(201), null, 12345678]) assert.equal(customerPasswordProblem(v), 'weak-password', String(v));
+  for (const v of ['password1', 'PASSWORD1', 'qwertyuiop', 'iloveyou', 'onestyle123']) assert.equal(customerPasswordProblem(v), 'common-password', v);
+  for (const v of ['ahmad123', 'Ahmad-Mac-26', 'كلمةسر123', 'x'.repeat(200)]) assert.equal(customerPasswordProblem(v), null, v);
+});
+
+test('admin passwords: 10 to 200 characters', () => {
+  assert.equal(adminPasswordProblem('x'.repeat(9)), 'weak-admin-password');
+  assert.equal(adminPasswordProblem('x'.repeat(10)), null);
+  assert.equal(adminPasswordProblem('x'.repeat(201)), 'weak-admin-password');
 });
 
 console.log(`\n${passed} checks passed`);

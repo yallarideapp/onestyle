@@ -16,11 +16,11 @@ Read `ONESTYLE-CONTEXT.md` first (Arabic): what the site is, its status and the 
 - Live layer: `live.js` and `live.css`.
   - `tools/build.mjs` adds them to `dist/` only.
   - `live.js` sets `window.OneStyleLive`, and every live hook in `app.js` and `admin.js` is guarded by it.
-- Preview only: `accounts-demo.js` gives the GitHub Pages preview shopper accounts kept in the visitor's browser (sign up, sign in, profile, password, My orders, a reset link shown on screen, a demo account).
+- Preview only: `passwords.js` (the password rules; the Worker gets its own copy at build time) and `accounts-demo.js` gives the GitHub Pages preview shopper accounts kept in the visitor's browser (sign up, sign in, profile, password, My orders, a reset link shown on screen, a demo account).
   - It sets `window.OneStylePreviewAccounts`; `app.js` uses it through `acct` (header and menu link, `#/account` and `#/reset/` routes, checkout prefill, the order's `account`).
   - It does nothing on the live site or from disk (file://), and `tools/build.mjs` leaves it out of `dist/`. It borrows the account styles from `live.css`.
 - Server: `worker/src/*.js`; schema `migrations/*.sql`; config `wrangler.jsonc`.
-- Generated, never edited and never committed: `dist/` and `worker/src/generated/shop-rules.js`. The latter is built from `data.js` + `settings.js`, so the server prices and cleans content with the storefront's own functions.
+- Generated, never edited and never committed: `dist/` and `worker/src/generated/shop-rules.js`. The latter is built from `data.js` + `settings.js` + `passwords.js`, so the server prices and cleans content with the storefront's own functions.
 
 ## Behaviour that must be kept
 
@@ -38,7 +38,8 @@ Read `ONESTYLE-CONTEXT.md` first (Arabic): what the site is, its status and the 
   - Hidden devices answer 404 with noindex.
   - Admin and reset pages stay on hash routes: `/#/admin`, `/#/reset/<token>`, `/ar#/reset/<token>`.
 - **Passwords:**
-  - PBKDF2-SHA-256 at 20,000 rounds (10 ms CPU limit on the free plan), at least 16 and at most 200 characters, for admin and shoppers.
+  - PBKDF2-SHA-256 at 20,000 rounds (10 ms CPU limit on the free plan).
+  - Minimums live in `passwords.js`, shared by the preview, the live forms and the Worker: shoppers 8 to 200 characters with at least one letter and not a common password; the admin 10 to 200. Old hashes keep verifying.
   - Do not change the round count without Jafar; check Metrics → CPU time first.
 - **Sessions:**
   - `onestyle_admin` (Path=/api/admin, 12 h) and `onestyle_customer` (Path=/api, 7 days), both HttpOnly, Secure, SameSite=Strict.
