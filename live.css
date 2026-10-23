@@ -1,7 +1,32 @@
 /* Live site only (Cloudflare build): account pages, admin sign-in, checkout notes. */
+.live-startup{min-height:100vh;min-height:100svh;padding:24px;color:var(--ink);background:var(--paper)}
+.live-startup-intro{min-height:65vh;min-height:65svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:18px}
+.live-startup-brand{max-width:100%;font:40px/1.2 Arial,sans-serif;letter-spacing:-2px;overflow-wrap:anywhere}
+.live-startup-brand>span{display:inline-flex;align-items:baseline;white-space:nowrap}
+.live-startup-brand strong{font-weight:800}.live-startup-brand small{font-size:16px;letter-spacing:0;margin-inline-start:4px}
+.live-startup-brand i{width:8px;height:8px;border-radius:50%;background:var(--blue);margin-inline-start:8px}
+.live-startup-brand img{display:block;max-width:min(260px,100%);max-height:88px;object-fit:contain}
+.live-startup-subtitle{font-size:12px;letter-spacing:.1em}
+.live-startup-progress{width:100px;height:3px;border-radius:3px;background:var(--line);overflow:hidden;visibility:hidden}
+.live-startup.is-loading .live-startup-progress{visibility:visible}
+.live-startup.is-loading .live-startup-progress:after{content:'';display:block;width:40%;height:100%;background:var(--blue);animation:live-startup-progress 1.2s ease-in-out infinite alternate}
+.live-startup [data-startup-status]{max-width:420px;min-height:1.7em;font-size:14px}
+.live-startup [hidden]{display:none!important}
+.live-startup-catalog{width:min(900px,100%);margin:0 auto 32px;overflow-wrap:anywhere}
+.live-startup-catalog summary{text-align:center;color:var(--blue);cursor:pointer;padding:12px;min-height:48px}
+.live-startup-home{display:block;text-align:center;padding:12px;color:var(--blue)}
+.live-startup.is-failed .live-startup-intro{min-height:45vh;min-height:45svh}
+@keyframes live-startup-progress{from{transform:translateX(0)}to{transform:translateX(150%)}}
+@media(prefers-reduced-motion:reduce){.live-startup.is-loading .live-startup-progress:after{animation:none;width:100%}}
 .seo-page{max-width:900px;margin:40px auto;padding:0 20px;line-height:1.8}
 .seo-page h1{font-size:28px;margin-bottom:12px}
 .seo-page a{color:var(--blue)}
+.live-telegram>p{margin-top:12px}.live-telegram .admin-label{display:flex;flex-direction:column;gap:7px;min-width:0}
+.live-telegram fieldset{border:0;padding:0;margin:0;min-width:0}
+.live-telegram .admin-input{width:100%;min-width:0}.live-telegram .admin-edit-grid{margin-block:20px;align-items:start}
+.live-telegram-toggle{display:flex;align-items:center;gap:10px;margin-block:16px;font-weight:600}
+.live-telegram-toggle input{width:18px;height:18px;flex-shrink:0}.live-telegram .is-error{color:#a43131}
+.live-telegram .admin-backup-actions{flex-wrap:wrap}.live-telegram .admin-form-feedback{overflow-wrap:anywhere}
 
 .live-account{padding-top:40px;padding-bottom:80px}
 .live-account .page-heading{margin-bottom:24px}

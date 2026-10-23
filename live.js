@@ -5,22 +5,49 @@
   'use strict';
   const me = document.currentScript;
   const pageScripts = (me && me.dataset.scripts || '').split(/\s+/).filter(Boolean);
+  const startup = document.querySelector('.live-startup');
+  let startupState = 'pending';
+  const startupText = (ar, en) => document.documentElement.lang === 'ar' ? ar : en;
+  function failStartup() {
+    if (startupState === 'ready' || startupState === 'failed') return;
+    startupState = 'failed';
+    clearTimeout(startupTimer);
+    if (!startup) return;
+    // Keep the original node: a render that fails partway through must not lose the fallback.
+    document.getElementById('app').replaceChildren(startup);
+    startup.classList.remove('is-loading');
+    startup.classList.add('is-failed');
+    startup.querySelector('[data-startup-status]').textContent = startupText('تعذّر تحميل المتجر. تصفّح الأجهزة أدناه أو أعد المحاولة.', 'The store could not finish loading. Browse devices below or try again.');
+    startup.querySelector('[data-startup-retry]').hidden = false;
+    startup.querySelector('details').open = true;
+  }
+  const startupTimer = setTimeout(failStartup, 15000);
+  if (startup) {
+    startup.classList.add('is-loading');
+    startup.querySelector('[data-startup-status]').textContent = startupText('جارٍ تجهيز المتجر…', 'Getting the store ready…');
+    startup.querySelector('[data-startup-retry]').addEventListener('click', () => location.reload());
+  }
 
   // ---------- server ----------
   class ApiError extends Error { constructor(code, status, extra) { super(code); this.code = code; this.status = status; this.extra = extra || {}; } }
-  async function request(path, { method = 'GET', body, raw, type } = {}) {
-    let res;
+  async function request(path, { method = 'GET', body, raw, type, timeout } = {}) {
+    const controller = timeout ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), timeout) : null;
     try {
-      res = await fetch(path, {
-        method, credentials: 'same-origin', cache: 'no-store',
-        headers: raw ? { 'Content-Type': type } : body !== undefined ? { 'Content-Type': 'application/json' } : {},
-        body: raw || (body !== undefined ? JSON.stringify(body) : undefined),
-      });
-    } catch { throw new ApiError('network', 0); }
-    let data = null;
-    try { data = await res.json(); } catch { /* not JSON */ }
-    if (!res.ok) throw new ApiError((data && data.error) || 'server', res.status, data || {});
-    return data;
+      let res;
+      try {
+        res = await fetch(path, {
+          method, credentials: 'same-origin', cache: 'no-store',
+          ...(controller ? { signal: controller.signal } : {}),
+          headers: raw ? { 'Content-Type': type } : body !== undefined ? { 'Content-Type': 'application/json' } : {},
+          body: raw || (body !== undefined ? JSON.stringify(body) : undefined),
+        });
+      } catch { throw new ApiError('network', 0); }
+      let data = null;
+      try { data = await res.json(); } catch { /* not JSON */ }
+      if (!res.ok) throw new ApiError((data && data.error) || 'server', res.status, data || {});
+      return data;
+    } finally { if (timer) clearTimeout(timer); }
   }
 
   const live = window.OneStyleLive = { content: null, version: 0, localKey: 'onestyle.live.v1' };
@@ -115,8 +142,10 @@
 
   // ---------- boot: published content first, then the page's scripts ----------
   (async () => {
-    const [content, session] = await Promise.allSettled([request('/api/content'), request('/api/customer/session')]);
-    if (content.status === 'fulfilled') { live.content = content.value.content; live.version = content.value.version; setSlugs(live.content.slugs); }
+    const [content, session] = await Promise.allSettled([request('/api/content', { timeout: 8000 }), request('/api/customer/session', { timeout: 4000 })]);
+    // Never present the bundled sample catalogue as current stock when the API is unavailable.
+    if (startupState === 'failed' || content.status !== 'fulfilled' || !content.value?.content?.settings || !Array.isArray(content.value.content.catalog)) throw new Error('startup-content');
+    live.content = content.value.content; live.version = content.value.version; setSlugs(live.content.slugs);
     // Old "#/product/…" links move to the real address; the admin keeps its "#/admin" address.
     const hash = location.hash;
     if (/^\/admin(\/|$)/.test(location.pathname)) history.replaceState(null, '', `/#${location.pathname}`);
@@ -124,8 +153,16 @@
     else if (!HASH_ONLY.test(hash) && !isArPath(location.pathname) && savedLang() === 'ar') history.replaceState(null, '', `/ar${location.pathname === '/' ? '' : location.pathname}${location.search}`);
     if (session.status === 'fulfilled') setShopper(session.value);
     if (/^\/admin(\/|$)/.test(route())) await loadAdminStatus().catch(() => {});
-    for (const src of pageScripts) { const s = document.createElement('script'); s.src = src; s.async = false; document.head.appendChild(s); }
-  })();
+    for (const src of pageScripts) {
+      if (startupState === 'failed') return;
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script'); s.src = src; s.async = false;
+        s.onload = resolve; s.onerror = () => reject(new Error('startup-script'));
+        document.head.appendChild(s);
+      });
+    }
+    if (startupState !== 'ready') failStartup();
+  })().catch(failStartup);
 
   live.attach = (bridge) => {
     app = bridge;
@@ -239,6 +276,7 @@
 
   // ---------- admin: sign-in, orders ----------
   const admin = { known: false, setup: false, signedIn: false, resetAvailable: false, view: 'login', message: '', error: '', orders: [], loaded: false, poll: null };
+  const telegram = { data: null, loaded: false, loading: false, busy: false, error: '', message: '', epoch: 0 };
   async function loadAdminStatus() {
     const data = await request('/api/admin/status');
     Object.assign(admin, { known: true, setup: data.setup, signedIn: data.signedIn, resetAvailable: data.resetAvailable });
@@ -308,9 +346,116 @@
       bottom.insertAdjacentHTML('beforeend', `<button type="button" class="admin-nav-link live-admin-button" data-live="admin-password">${t('تغيير كلمة السر', 'Change password')}</button><button type="button" class="admin-nav-link live-admin-button" data-live="admin-logout">${t('تسجيل خروج', 'Sign out')}</button>`);
     }
     decorateProductAddresses(root);
+    decorateTelegram(root);
     if (!admin.loaded) loadOrders().catch((error) => { if (error.code === 'signed-out') { admin.signedIn = false; app.render(); } });
     startPolling();
   };
+
+  // ---------- private Telegram connection (live admin only) ----------
+  const telegramError = (code) => ({
+    'telegram-token': t('توكن البوت غير صحيح. انسخه كاملًا من BotFather.', 'The bot token is invalid. Copy the complete token from BotFather.'),
+    'telegram-chat': t('راجع Chat ID وافتح البوت واضغط Start. للمجموعة، أضف البوت أولًا.', 'Check the Chat ID and press Start in your bot. For a group, add the bot first.'),
+    'telegram-blocked': t('البوت ممنوع من إرسال الرسائل. اضغط Start أو أعد إضافته للمجموعة.', 'The bot cannot send messages. Press Start or add it to the group again.'),
+    'telegram-updates-busy': t('البوت متصل بخدمة أخرى. أدخل Chat ID يدويًا؛ لم نغيّر إعداداته.', 'This bot is connected to another service. Enter the Chat ID manually; its settings have not been changed.'),
+    'telegram-rate-limited': t('تلغرام طلب الانتظار. جرّب بعد قليل.', 'Telegram asked us to wait. Try again shortly.'),
+    'telegram-unavailable': t('تعذّر الاتصال بتلغرام. الإعدادات والطلبات المحفوظة باقية؛ جرّب مجددًا.', 'Telegram could not be reached. Saved settings and orders are safe; try again.'),
+    'telegram-not-configured': t('احفظ الاتصال أولًا، ثم أرسل رسالة تجربة.', 'Save the connection first, then send a test message.'),
+    'telegram-conflict': t('تغيّر الاتصال في جلسة أخرى. اضغط تحديث الاتصال قبل التعديل.', 'The connection changed in another session. Refresh it before editing.'),
+  })[code] || errorText(code);
+
+  function telegramPanel() {
+    if (!telegram.loaded) return `<h2>Telegram · ${t('تنبيهات الطلبات', 'Order alerts')}</h2><p>${t('جارٍ تحميل الاتصال…', 'Loading the connection…')}</p>`;
+    if (!telegram.data) return `<h2>Telegram · ${t('تنبيهات الطلبات', 'Order alerts')}</h2><p class="live-alert" role="alert">${esc(telegram.error)}</p><button class="admin-btn" type="button" data-live="telegram-refresh">${t('إعادة المحاولة', 'Try again')}</button>`;
+    const d = telegram.data;
+    const status = d.configured ? `${d.enabled ? t('مفعّل', 'On') : t('متوقف', 'Off')} · @${esc(d.botUsername)} · <bdi>${esc(d.chatId)}</bdi>` : t('غير متصل بعد', 'Not connected yet');
+    const delivery = d.lastResult ? `<p class="admin-field-note">${t('آخر محاولة:', 'Last attempt:')} <bdi>${esc(d.lastAttemptAt ? new Date(d.lastAttemptAt).toLocaleString(lang() === 'ar' ? 'ar-JO' : 'en-GB') : '')}</bdi> · ${d.lastResult === 'sent' ? t('وصلت الرسالة إلى تلغرام ✓', 'Telegram accepted the message ✓') : esc(telegramError(d.lastResult))}</p>` : '';
+    return `<h2>Telegram · ${t('تنبيهات الطلبات', 'Order alerts')}</h2>
+      <p>${t('أدخل توكن البوت وChat ID هنا. التنبيهات تصل من السيرفر حتى لو لوحة الإدارة مغلقة.', 'Enter the bot token and Chat ID here. Alerts are sent by the server even when the admin panel is closed.')}</p>
+      <p class="admin-alert-status" data-on="${d.enabled}">${status}</p>
+      <form data-live-telegram-form novalidate><fieldset${telegram.busy ? ' disabled' : ''}>
+        <div class="admin-edit-grid">
+          <label class="admin-label">${t('توكن البوت', 'Bot token')}<input class="admin-input" name="token" type="password" dir="ltr" autocomplete="off" maxlength="160" placeholder="${d.configured ? t('محفوظ · اتركه فارغًا للإبقاء عليه', 'Saved · leave blank to keep it') : t('من BotFather', 'From BotFather')}"><small class="admin-field-note">${t('BotFather ← /newbot. التوكن يُحفظ على السيرفر فقط، ولا يظهر في التصدير أو المتجر.', 'BotFather → /newbot. The token stays on the server and is excluded from exports and the storefront.')}</small></label>
+          <label class="admin-label">Chat ID<input class="admin-input" name="chatId" dir="ltr" inputmode="text" maxlength="17" value="${esc(d.chatId)}"><small class="admin-field-note">${t('افتح البوت واضغط Start، ثم اضغط «اعثر على المحادثة». للمجموعة أضف البوت وأرسل رسالة فيها.', 'Open the bot and press Start, then choose “Find chat”. For a group, add the bot and send a message there.')}</small></label>
+        </div>
+        <div data-telegram-chats></div>
+        <label class="live-telegram-toggle"><input name="enabled" type="checkbox"${!d.configured || d.enabled ? ' checked' : ''}>${t('إرسال تنبيه لكل طلب جديد', 'Send an alert for each new order')}</label>
+        <p class="admin-field-note">${t('الرسالة فيها رقم الطلب، الأجهزة والمجموع ورابط الطلب. أرقام العملاء وعناوينهم تبقى داخل اللوحة.', 'Messages include the order number, items, total and order link. Customer phone numbers and addresses stay in admin.')}</p>
+        <div class="admin-backup-actions">
+          <button class="admin-btn admin-btn-primary" type="submit">${t('حفظ الاتصال', 'Save connection')}</button>
+          <button class="admin-btn" type="button" data-live="telegram-chats">${t('اعثر على المحادثة', 'Find chat')}</button>
+          ${d.configured ? `<button class="admin-btn" type="button" data-live="telegram-test">${t('إرسال رسالة تجربة', 'Send test message')}</button><button class="admin-btn admin-danger" type="button" data-live="telegram-remove">${t('إزالة الاتصال', 'Remove connection')}</button>` : ''}
+          <button class="admin-btn" type="button" data-live="telegram-refresh">${t('تحديث الاتصال', 'Refresh connection')}</button>
+        </div>
+        <p class="admin-form-feedback${telegram.error ? ' is-error' : ''}" role="status" data-telegram-feedback>${esc(telegram.busy ? t('جارٍ الاتصال…', 'Connecting…') : telegram.error || telegram.message)}</p>
+      </fieldset></form>${delivery}`;
+  }
+
+  function paintTelegram() {
+    const panel = document.querySelector('[data-live-telegram]');
+    if (panel) panel.innerHTML = telegramPanel();
+  }
+  async function loadTelegram() {
+    if (telegram.loading || telegram.busy) return;
+    telegram.loading = true; telegram.loaded = false; paintTelegram();
+    const epoch = telegram.epoch;
+    try { const data = await request('/api/admin/telegram', { timeout: 10000 }); if (epoch === telegram.epoch && admin.signedIn) { telegram.data = data; telegram.error = ''; } }
+    catch (error) { if (epoch === telegram.epoch && admin.signedIn) { telegram.data = null; telegram.error = telegramError(error.code); } }
+    finally { if (epoch === telegram.epoch) { telegram.loading = false; if (admin.signedIn) { telegram.loaded = true; paintTelegram(); } } }
+  }
+  function decorateTelegram(root) {
+    if (route() !== '/admin/settings' || !admin.signedIn) return;
+    const main = root.querySelector('.admin-main');
+    if (main && !main.querySelector('[data-live-telegram]')) main.insertAdjacentHTML('beforeend', `<section class="admin-panel admin-pad admin-backup live-telegram" data-live-telegram>${telegramPanel()}</section>`);
+    if (!telegram.loaded) loadTelegram();
+  }
+  async function submitTelegram(form, action = 'save') {
+    if (telegram.busy || telegram.loading || !form) return;
+    telegram.busy = true;
+    const epoch = telegram.epoch;
+    const token = form.elements.namedItem('token').value.trim();
+    const chatId = form.elements.namedItem('chatId').value.trim();
+    const enabled = form.elements.namedItem('enabled').checked;
+    const controls = [...form.querySelectorAll('input,button,select')];
+    const feedback = form.querySelector('[data-telegram-feedback]');
+    controls.forEach((control) => { control.disabled = true; });
+    feedback.classList.remove('is-error'); feedback.textContent = t('جارٍ الاتصال…', 'Connecting…');
+    telegram.error = ''; telegram.message = '';
+    try {
+      if (action === 'chats') {
+        const result = await request('/api/admin/telegram/chats', { method: 'POST', body: token ? { token } : {}, timeout: 15000 });
+        if (epoch !== telegram.epoch || !admin.signedIn) return;
+        if (!form.isConnected) { telegram.message = t('تغيّرت الصفحة أثناء البحث. أعد البحث عن المحادثة.', 'The page changed during lookup. Find the chat again.'); return; }
+        const box = form.querySelector('[data-telegram-chats]');
+        box.innerHTML = result.chats.length ? `<label class="admin-label">${t('اختر المحادثة المطلوبة', 'Choose the destination chat')}<select class="admin-input" data-telegram-chat-select><option value="">${t('اختر محادثة', 'Choose a chat')}</option>${result.chats.map((chat) => `<option value="${esc(chat.id)}">${esc(chat.label)} · ${esc(chat.id)}</option>`).join('')}</select></label>` : '';
+        if (result.chats.length === 1) { form.elements.namedItem('chatId').value = result.chats[0].id; box.querySelector('select').value = result.chats[0].id; }
+        feedback.textContent = result.chats.length ? t('راجع المحادثة ثم احفظ الاتصال.', 'Check the destination, then save the connection.') : t('لم تظهر محادثة. اضغط Start في البوت أو أرسل رسالة جديدة، ثم جرّب مرة أخرى.', 'No chat found. Press Start or send the bot a new message, then try again.');
+        return;
+      }
+      const path = '/api/admin/telegram' + (action === 'test' ? '/test' : '');
+      const method = action === 'remove' ? 'DELETE' : action === 'test' ? 'POST' : 'PUT';
+      const body = action === 'save' ? { baseVersion: telegram.data.version, token, chatId, enabled } : action === 'remove' ? { baseVersion: telegram.data.version } : {};
+      const data = await request(path, { method, body, timeout: 20000 });
+      if (epoch !== telegram.epoch || !admin.signedIn) return;
+      telegram.data = data;
+      telegram.message = action === 'test' ? t('تلغرام استقبل رسالة التجربة. تحقق من المحادثة.', 'Telegram accepted the test message. Check the chat.') : action === 'remove' ? t('أُزيل الاتصال والتوكن المحفوظ.', 'The connection and saved token were removed.') : t('تم حفظ الاتصال.', 'Connection saved.');
+      telegram.busy = false; paintTelegram();
+    } catch (error) {
+      if (epoch !== telegram.epoch || !admin.signedIn) return;
+      telegram.error = telegramError(error.code);
+      feedback.classList.add('is-error'); feedback.textContent = telegram.error;
+      if (error.code === 'signed-out') { admin.signedIn = false; telegram.loaded = false; telegram.data = null; telegram.epoch += 1; telegram.busy = false; telegram.loading = false; app.render(); }
+    } finally {
+      if (epoch === telegram.epoch) {
+        telegram.busy = false; controls.forEach((control) => { control.disabled = false; });
+        if (!form.isConnected) paintTelegram();
+        document.querySelector('[data-live-telegram] fieldset')?.removeAttribute('disabled');
+      }
+    }
+  }
+  document.addEventListener('change', (event) => {
+    if (!event.target.matches?.('[data-telegram-chat-select]')) return;
+    event.target.closest('form').elements.namedItem('chatId').value = event.target.value;
+  });
 
   // ---------- addresses: real paths for Google ----------
   // English pages sit at /shop, /mac, /devices/<slug>; Arabic ones under /ar. The admin and
@@ -372,6 +517,9 @@
     rewriteLinks(document.body);
     const skip = document.querySelector('.skip-link');
     if (skip) skip.textContent = t('تجاوز إلى المحتوى', 'Skip to content');
+    // A slow final script may still complete after the fallback appeared; let it recover.
+    startupState = 'ready';
+    clearTimeout(startupTimer);
   };
   const observer = new MutationObserver((records) => {
     for (const record of records) {
@@ -667,6 +815,7 @@
   }
 
   document.addEventListener('submit', (event) => {
+    if (event.target.matches?.('form[data-live-telegram-form]')) { event.preventDefault(); submitTelegram(event.target); return; }
     const form = event.target.closest && event.target.closest('form[data-live-form]');
     if (!form) return;
     event.preventDefault();
@@ -676,7 +825,9 @@
     const el = event.target.closest && event.target.closest('[data-live]');
     if (!el) return;
     const action = el.dataset.live;
-    if (action === 'tab') { shopper.tab = el.dataset.tab; shopper.error = ''; shopper.message = ''; app.render(); }
+    if (action === 'telegram-refresh') { telegram.loaded = false; telegram.message = ''; loadTelegram(); }
+    else if (['telegram-chats', 'telegram-test', 'telegram-remove'].includes(action)) { submitTelegram(el.closest('form'), action.slice('telegram-'.length)); }
+    else if (action === 'tab') { shopper.tab = el.dataset.tab; shopper.error = ''; shopper.message = ''; app.render(); }
     else if (action === 'lang') { app.toggleLang(); }
     else if (action === 'admin-view') { admin.view = el.dataset.view; admin.error = ''; admin.message = ''; app.render(); }
     else if (action === 'logout') {
@@ -684,7 +835,8 @@
       setShopper({ signedIn: false, resetAvailable: shopper.resetAvailable }); shopper.message = ''; app.render();
     } else if (action === 'admin-logout') {
       await request('/api/admin/logout', { method: 'POST', body: {} }).catch(() => {});
-      Object.assign(admin, { signedIn: false, orders: [], loaded: false, view: 'login', error: '', message: '' }); app.render();
+      Object.assign(admin, { signedIn: false, orders: [], loaded: false, view: 'login', error: '', message: '' });
+      Object.assign(telegram, { data: null, loaded: false, loading: false, busy: false, error: '', message: '', epoch: telegram.epoch + 1 }); app.render();
     } else if (action === 'admin-password') {
       app.openModal(`${app.modalHead(t('تغيير كلمة السر', 'Change password'))}<form data-live-form="admin-password"><p class="live-alert" role="alert" hidden></p><label>${t('كلمة السر الحالية', 'Current password')}<input name="current" type="password" autocomplete="current-password" required></label><label>${t('كلمة السر الجديدة (10 خانات أو أكثر)', 'New password (10+ characters)')}<input name="password" type="password" autocomplete="new-password" minlength="10" required></label><label>${t('أعد كلمة السر', 'Repeat the password')}<input name="repeat" type="password" autocomplete="new-password" minlength="10" required></label><button class="button primary full" type="submit">${t('غيّر كلمة السر', 'Change password')}</button></form>`);
     } else if (action === 'go-account') { app.closeModal(); }

@@ -1,127 +1,68 @@
 ---
 name: cloudflare-free-backend
-description: "Use when Jafar asks to take one of his sites live on Cloudflare's free plan (Workers + D1 + KV) instead of Hostinger: real orders, admin edits shared by everyone, uploaded photos, no card, deployed from GitHub on every push."
+description: "Build or connect a site's real backend on Cloudflare's free plan using Workers, D1 and KV, with GitHub deployments, shared admin content, uploads, accounts and server-side order alerts as the site requires. Use when Jafar asks for backend/server connection or Cloudflare launch; not for ordinary frontend-only edits."
 ---
 
-# Free live backend on Cloudflare (Workers + D1 + KV)
+# Cloudflare backend and owner handover
 
-Decided with Jafar on 17 Oct 2026: a shop that won't pay for hosting gets a free live site on Cloudflare instead of Hostinger PHP. Build it **only when he asks** ("اعمل الربط", "نزّله على Cloudflare"), for any project. Until then the browser-local demo stays as it is.
+Jafar's chosen default for taking his sites live is Cloudflare Workers + Static Assets + D1 + KV, with GitHub deploying the source. Keep the free/no-card goal; verify current official limits before promising capacity or cost. A paid domain is separate and optional before launch on `workers.dev`. Do not switch providers or add paid services without his request.
 
-`shop-website-playbook` still decides what a shop site needs, and `website-delivery-layout` decides the folders and the handover. This skill replaces only the PHP/Hostinger parts: the API, storage, upload ZIP and Hostinger guide.
+When asked to connect a site to a server, complete the backend, its admin controls, integration setup, tests and owner guide. Adapt this workflow to the site's actual features; a simple information site does not need a shop's accounts or checkout. Do not stop at a frontend mockup or a plan.
 
-## Why Cloudflare and not the others (tell him in one line if he asks again)
+## Establish the right source
 
-- **Firebase Spark (free):** hosting is capped at 360 MB/day, which is about 170 first visits a day with WebP pictures. Cloud Storage and Cloud Functions need Blaze, which means a card, and budget alerts don't stop spending. Fine on Blaze if the shop pays with its own card.
-- **GitHub Pages:** its terms forbid running a shop on it. Keep it for client previews only.
-- **Supabase free:** projects can pause after a week of low activity.
-- **Cloudflare + Firebase together:** works, but it means two accounts, and the Admin SDK doesn't run in Workers. Not worth it for a small shop.
+- Read the project's `AGENTS.md` and context/change log. Inspect its current frontend, storage, routes, workflows, backend and API contracts before choosing changes. Pull/rebase before edits when the checkout is clean; preserve others' unfinished work.
+- Identify the exact owner repository, production domain and preview repository. Prefer a private source repository in the shop's account. An existing public demo can remain separate. They do **not** synchronize automatically: only copy explicitly requested changes to the named destination.
+- Repository ownership, collaborator access, authenticated GitHub account and commit author are different things. Follow the current project's approved author identity. Do not hardcode Jafar's account into a new owner's project or rewrite history without a specific request.
+- Preserve the existing build/framework, line endings and business behavior. Edit source, not generated bundles, `dist/` or generated server rules.
 
-## Free limits (re-check the official pages before quoting them; they change)
+## Build the complete live layer
 
-| Service | Free plan |
-|---|---|
-| Static assets (site, pictures) | Requests free and unlimited |
-| Worker (API) | 100,000 requests/day, 10 ms CPU per request |
-| D1 (SQL, SQLite) | 10 databases, 500 MB each, 5 GB per account, 5M rows read and 100k rows written per day |
-| KV | 1 GB, 100k reads/day, 1,000 writes/deletes/lists per day |
+- One Worker serves static assets and the API. D1 stores transactional data, published content, users, sessions and rate limits; KV stores uploaded image bytes. Never store orders in KV.
+- Keep the demo and live adapters separate. Portable local demos and public previews must keep their existing behavior; a preview must not silently use the production database or integration keys. Publish an explicit storefront-only file list for public Pages previews.
+- Reuse price, variant, content-cleaning and password rules across frontend and server. The server validates input and recomputes prices, fees, availability and totals in integer minor currency units. Commit an order and its unique number atomically; retries with the same idempotency key return the same order.
+- Connect all existing admin features to shared storage: categories and images, product specifications and condition, used-device battery details when applicable, stock, appearance/hero controls and delivery settings. A new category must appear in storefront navigation/filtering and relevant admin choices from one data source. Preserve private stock counts and hidden products.
+- Implement the site's required admin/shopper authentication, password changes, reset email, order history/status and privacy boundaries. Preserve approved password policies and hash compatibility; never quietly weaken them to meet CPU limits.
+- Keep ordering disabled until the owner approves opening it when that is the site's policy. Preserve its WhatsApp fallback and indexing switch.
+- Use real crawlable product/category URLs where the site supports them, language-specific routes, safe old-slug redirects, hidden-item 404s, sitemap and robots rules. Keep private admin/account/reset routes out of search.
+- Make the first paint presentable without sacrificing the real HTML catalog or SEO. Bound startup/API/session waits, expose a retry path and handle missing scripts. A live API failure must never show sample inventory as if it were current stock.
 
-Sources: developers.cloudflare.com/workers/platform/limits, /workers/static-assets/billing-and-limitations, /d1/platform/limits, /workers/ci-cd/builds/limits-and-pricing, and cloudflare.com/pricing.
+Read [references/live-shop.md](references/live-shop.md) when implementing transactional/authentication behavior, photo uploads or startup. It records the tested OneStyle design and its project-specific limits; do not impose those numbers on unrelated sites.
 
-The only cost is the domain, which the shop pays for yearly. Its DNS must be on Cloudflare (change the nameservers) to attach it to the Worker. Before that, the site runs on `<name>.<account>.workers.dev`.
+## Owner-controlled integrations
 
-## Accounts (his rules apply)
+For a shop requesting Telegram alerts, provide the complete **BotFather → admin connection → saved-order alert** flow, not a browser-only send button. Read [references/telegram.md](references/telegram.md) before implementing it.
 
-- The Cloudflare account is created **in the shop's name** with a new email. **Jafar signs up himself.** Never log in for him, never type his passwords, never handle a card.
-- Deploys come from GitHub (next section). The first-time setup (creating D1 and KV, the first migration, the secrets) is done by him, either in the dashboard or with `npx wrangler login` on his computer. He types the secrets himself, under **Settings > Variables & Secrets** or with `npx wrangler secret put NAME`.
-- Nothing is published, bought or sent to the client without his explicit yes.
+The owner can create a bot on his phone, start it, paste its token into the authenticated admin panel, choose or enter the Chat ID, save, test, enable/disable and remove it. Orders send from the server after saving, even with the admin panel closed. Show safe connection/delivery status. Tell him what information the alert contains and whether retries exist.
 
-## GitHub: push to deploy (decided 17 Oct 2026)
+Deployment secrets (setup code, Resend key, signing/encryption material) belong in Cloudflare runtime secrets. Owner-editable integration credentials may instead live in a dedicated private backend table accessible only through authenticated admin operations. Never put them in public settings/content, localStorage, customization exports, returned token values, logs or source control. The owner enters real values in the dashboard/admin; do not ask him to paste them in chat.
 
-He keeps the code on GitHub, and Cloudflare deploys it on every push (Workers Builds).
+For email, keep order notification delivery separate from password resets. Use a verified sender/domain, bounded requests and daily budgets. A successful API response is not proof that the owner received an email or Telegram message: confirm real arrival during authorized setup.
 
-- **The source repo is private** and separate from any public preview repo (the runtime-only GitHub Pages preview stays as it is, or is deleted after going live). It holds the source: the site, `worker/`, `migrations/`, `wrangler.jsonc`, tests, `AGENTS.md` and the context file, so every edit goes to the source, never to the built files.
-- **Never in the repo:** secrets (Resend key, setup code), `.dev.vars`, `node_modules/`, `dist/`, `.wrangler/`. Put them in `.gitignore` and scan before every push.
-- **Connecting:**
-  - In the shop's Cloudflare account: Workers & Pages > Create application > GitHub, then pick the repo. For an existing Worker: Settings > Builds > Connect.
-  - He authorizes the Cloudflare GitHub app for that one repo only.
-  - The Worker's name in the dashboard must match `name` in `wrangler.jsonc`, or the build fails.
-- **Build settings:**
-  - Root directory: the folder that holds `package.json` and `wrangler.jsonc`.
-  - Build command: `npm ci && npm run build`.
-  - Deploy command: `npm run deploy`, where the `deploy` script runs `wrangler d1 migrations apply DB --remote && wrangler deploy`, so migrations run before the new code goes live.
-  - Build variables are build-only. Runtime secrets live under Settings > Variables & Secrets.
-- **Branches:** production branch `main`. Other branches get preview builds with their own URL, for trying a change before it goes live. A preview shares the production D1 unless a separate preview database is bound, so say so before testing orders on a preview.
-- **Free Workers Builds:** 3,000 build minutes a month, 1 build at a time, 20-minute timeout.
-- **Commits:** as `yallarideapp <227899290+yallarideapp@users.noreply.github.com>`, with no tool names in messages, code or files. Push only what he asked for, and only to the repo he named.
+## Photos
 
-## Architecture
+- Optimize built-in raster photography to WebP when appropriate, preserving useful resolution and transparency; keep suitable vector logos/icons as SVG. Check actual file signatures before saying images are WebP.
+- Inspect the upload pipeline separately. Accepting WebP does not mean JPG/PNG uploads are converted. Report the actual behavior; only add conversion when requested or needed by the site's agreed media policy.
+- Enforce size and detected PNG/JPEG/WebP type on the server, reject mismatched or executable bytes, store the detected content type and serve with `nosniff` and appropriate caching. Never trust an extension or browser MIME alone.
 
-```
-site/            the existing front end (React/TS or vanilla), built to dist/
-worker/src/      index.ts (router), orders.ts, content.ts, admin.ts, repairs.ts, photos.ts, pricing.ts (shared with the front end)
-migrations/      0001_init.sql …
-wrangler.jsonc   assets.directory = dist, not_found_handling = single-page-application, D1 + KV bindings
-```
+## GitHub and Cloudflare deployment
 
-- **One Worker** serves `dist/` as static assets and answers `/api/*`. Hash routes need nothing on the server.
-- **D1 tables:**
-  - `content` (one row: the published JSON + version), `orders`, `order_lines`, `repairs`, `counters`.
-  - `sessions` (hashed token, expiry), `login_attempts`.
-  - Money in fils (integers).
-- **KV:** the shop's uploaded photos, as `photo:<id>` → WebP bytes, served by `/api/photo/<id>` with long cache headers. The browser resizes before upload (≤1000 px, WebP), as in the demo. Max 25 MiB per value, but keep it under 1 MB. Mind the 1,000 writes/day.
-- **Never put orders in KV:** two writes at the same moment can lose one, and the write limit is low. Orders go in D1.
-- **Built-in pictures:** WebP at the same resolution in `dist/assets/` (PNG → WebP took one shop's picture sheets from 14 MB to 1.6 MB; masks lossless).
+- The shop owns its GitHub, Cloudflare and mail-provider accounts. Jafar/owner creates accounts and performs sign-in, password, MFA and billing steps. Guide the setup and automate the already-authorized technical work with available tools.
+- Ignore secrets, `.env`, `.dev.vars`, `node_modules/`, `dist/` and `.wrangler/`; inspect the actual diff and publication contents before pushing. Tests contain only obvious local dummy credentials and fake services.
+- Configure Workers Builds for the chosen production branch and exact repo. Match dashboard Worker name and `wrangler.jsonc`; use the correct project root and bindings.
+- Typical build: `npm ci && npm run build`. Typical deploy script: `wrangler d1 migrations apply DB --remote && wrangler deploy`. Add new migrations; never edit an applied migration. Preserve dashboard variables as needed, such as `keep_vars` in an existing configuration.
+- Runtime secrets differ from build variables. Preview/version deployments can share production D1/KV unless explicitly isolated: inspect bindings before testing writes or messages. Do not promise automatic isolated previews without configuring them.
+- Confirm deployments succeed and check the actual site, bindings, routes, domain/TLS and order switch. Explain rollback, including database compatibility: reverting code does not undo a migration.
+- Push/deploy only to the destination Jafar authorizes. Existing authorization remains valid; if it is missing, finish the code, tests and a reviewable preview first, then obtain explicit approval before publishing. Buying a domain or sending a client message needs its own authorization.
 
-## Server rules (same as the PHP API in shop-website-playbook)
+## Verification and delivery
 
-- **`POST /api/order`:**
-  - Requirements: HTTPS, same origin (`Origin`, or `Sec-Fetch-Site`), exact `application/json`, body cap (e.g. 16 KB), and orders turned on in the settings.
-  - Prices come from the published content, never from the request. The shopper's total must match (fils). At most 5 per line and 30 lines. Unknown or sold-out product or variant: refuse with a translated message.
-  - Order number from `counters` in the same `db.batch()` as the insert (`UPDATE … RETURNING`), so two orders never share a number.
-  - Rate limit per IP (`CF-Connecting-IP`), stored in D1.
-- **Repairs:** same checks. Tracking needs number **and** mobile and returns only status and dates.
-- **Admin:**
-  - A setup code creates the password. Store a hash using PBKDF2-SHA-256 (WebCrypto).
-  - Session cookie: `HttpOnly; Secure; SameSite=Strict`, random 32-byte token stored hashed. Lock out after repeated failures.
-  - Publish uses a version check (409 on conflict), as in the playbook.
-- **CPU 10 ms:**
-  - PBKDF2 is CPU work; Workers allow at most 100,000 iterations.
-  - After the first deploy, check the login's CPU time in the dashboard. If it goes over, say so and agree with him (fewer iterations with a long random password, or another approach). Don't quietly weaken it.
-- **Order email:** send via the Resend API with `fetch` (`RESEND_API_KEY` secret, `Idempotency-Key` per order, short timeout), and save the order before trying the email. The WhatsApp message stays as it is in the demo.
-- **Headers:** CSP, `X-Content-Type-Options`, `Referrer-Policy`. JSON escaped. No secret ever reaches `dist/`.
+- Run project-required pricing/content, order/admin, accounts/reset, integration and browser checks before a push. Use disposable local D1/KV and fake email/Telegram services; do not test against production by accident. Respect the environment's browser-tool rules.
+- Exercise tampering, authorization/CSRF, body/type caps, invalid variants, concurrent orders/retries, conflict handling, token redaction, upload bytes and limits. For UI changes check Arabic/RTL, English, mobile/desktop widths and two sessions seeing a shared admin update.
+- For a newly built Worker or substantial backend change, have an independent subagent review the affected server code when delegation is available; fix findings and retest. Do not turn small unrelated edits into a full security audit.
+- Record exactly which suites passed and which were substituted or could not run. Verify portable previews when shared files change, if permitted. Do not claim an automated suite ran when only a focused browser check ran.
+- After first real deployment inspect Cloudflare CPU/usage, particularly login/password hashing, before proposing changes. Never present local tests as proof of production CPU usage, real message delivery or a real iPhone test.
+- Update the project's context log, `AGENTS.md` for lasting invariants, and its Arabic owner guide (`Cloudflare-guide.md`/existing equivalent). Include owner account/repo selection, D1/KV creation, bindings, migrations, runtime secrets, setup password, domain, mail, BotFather/admin connection, update/rollback and usage checks as applicable. Keep source archives free of secrets and generated/local files.
+- Report the practical outcome, tests, pending owner actions and deployment state plainly. Distinguish “implemented locally,” “pushed,” “deployed,” “configured” and “real delivery confirmed.”
 
-## Front end changes
-
-- Keep **two builds**: the portable demo (localStorage, works from disk) and the live build (API). Choose with a build flag; the store's functions stay the same and switch adapter.
-- Live: content loads from `/api/content` and falls back to the built-in seed only before the first publish. Orders, repairs and the admin call the API. The bag stays in localStorage.
-- Keep every demo behaviour: offer-price rules, option keys, Arabic digits, toasts, campaign dates, etc.
-
-## Testing (all in the cloud workspace; nothing runs on his account)
-
-1. `npm i -D wrangler`. Run `npx wrangler d1 migrations apply DB --local`, then `npx wrangler dev` (local D1 and KV).
-2. Run the site's browser tests against `wrangler dev`: order, repair and tracking, admin login, publish, photo upload, two browsers seeing the same change.
-3. Abuse tests with Python `http.client`: foreign Origin, wrong content type, oversized body, price tampering, quantity above 5, unknown ids, two orders at once (distinct numbers), admin calls without a session, a tampered cookie, the lockout, and tracking with a wrong mobile.
-4. Have an independent subagent review the Worker code; fix its findings and retest.
-5. Say plainly what did not run: his real Cloudflare account, production CPU times, real email delivery, a real iPhone.
-
-## Delivery
-
-- Replace the Hostinger upload ZIP and guide with **`Cloudflare-guide.md`** (Arabic), covering:
-  - creating the account in the shop's name
-  - creating the private GitHub repo and connecting it (Workers Builds, settings above)
-  - `npm install`, `wrangler login`
-  - creating D1 and KV (`wrangler d1 create`, `wrangler kv namespace create`) and pasting the ids into `wrangler.jsonc`
-  - `wrangler d1 migrations apply DB --remote`
-  - `wrangler secret put` for each secret
-  - the first deploy (a push to `main`, or `wrangler deploy`)
-  - first admin password with the setup code
-  - attaching the domain
-  - where to see usage and the free limits
-- The source ZIP includes `worker/`, `migrations/` and `wrangler.jsonc` with placeholder ids, never real secrets.
-- After that, an update is a push to `main`. Say how to roll back: Deployments > pick the previous version, or revert the commit.
-- Update `AGENTS.md`, the context file's log, `Source/README-AR.md`, and the `shop-website-playbook`-style reply (short, Arabic, what changed, what was tested, what wasn't).
-- No tool traces anywhere (code, build, guides, commits).
-
-## First build
-
-The first project to use this has not been built yet (17 Oct 2026). After the first build, update this skill with whatever was learned (real CPU times, wrangler versions, pitfalls), proposing the full updated skill.
+Authoritative references to recheck when relevant: [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), [static asset billing](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/), [D1 limits](https://developers.cloudflare.com/d1/platform/limits/), [KV limits](https://developers.cloudflare.com/kv/platform/limits/), [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/), [Telegram Bot API](https://core.telegram.org/bots/api).

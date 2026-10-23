@@ -4,6 +4,7 @@ import { HttpError, json, readJson, checkOrigin, takeSlots, ipKey, str, normalis
 import { getContent, cfg } from './content.js';
 import { customerId } from './customer.js';
 import { sendMail } from './mail.js';
+import { sendOrderTelegram } from './telegram.js';
 
 const TOKEN = /^[a-f0-9]{32}$/;
 const STATUSES = ['new', 'confirmed', 'shipped', 'delivered', 'cancelled'];
@@ -112,6 +113,9 @@ export async function placeOrder(request, env, ctx) {
     throw error;
   }
   if (!number) throw new HttpError(500, 'server');
+
+  // The order is committed first; notification failure must never lose or duplicate it.
+  ctx.waitUntil(sendOrderTelegram(env, content, { number, priced }).catch(() => {}));
 
   if (env.RESEND_API_KEY && env.ORDER_EMAIL) {
     ctx.waitUntil((async () => {

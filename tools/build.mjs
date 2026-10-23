@@ -4,6 +4,7 @@
 import { cp, mkdir, readFile, rm, writeFile, lstat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { startupShell } from '../worker/src/startup.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(root, 'dist');
@@ -33,8 +34,12 @@ if (!scripts.some((src) => src.startsWith('app.js'))) throw new Error('index.htm
 // Pages live at deeper addresses (/devices/…, /ar/…), so every file is linked from the site root.
 const fromRoot = (src) => (/^(https?:|\/|data:)/.test(src) ? src : `/${src}`);
 html = html.replace(/(<link [^>]*href=")([^"]+)(")/g, (_, a, src, b) => `${a}${fromRoot(src)}${b}`);
-const loader = `  <link rel="stylesheet" href="/live.css?v=${stamp}">\n  <script src="/live.js?v=${stamp}" data-scripts="${scripts.map(fromRoot).join(' ')}" defer></script>\n`;
+// Download dependencies during the content request; execute them only after it succeeds.
+const preload = scripts.map((src) => `  <link rel="preload" as="script" href="${fromRoot(src)}">\n`).join('');
+const loader = `${preload}  <link rel="stylesheet" href="/live.css?v=${stamp}">\n  <script src="/live.js?v=${stamp}" data-scripts="${scripts.map(fromRoot).join(' ')}" defer></script>\n`;
 html = html.replace('</head>', `${loader}</head>`);
+// If page rendering or the content API is unavailable, static assets still have a usable shell.
+html = html.replace('<div id="app"></div>', `<div id="app"><!--live-startup-->${startupShell({}, 'ar', '<p>معلومات الأجهزة غير متاحة مؤقتًا. أعد المحاولة.</p>')}<!--/live-startup--></div>`);
 await writeFile(path.join(dist, 'index.html'), html);
 
 // robots.txt and sitemap.xml are written by the Worker from the published content.

@@ -5,6 +5,7 @@ import { getContent, sanitizeContent, dropCache } from './content.js';
 import { listOrders, updateOrder } from './orders.js';
 import { resetReady } from './mail.js';
 import { issueReset, findReset, clearResets, sendResetEmail } from './reset.js';
+import { handleTelegram } from './telegram.js';
 
 const SESSION_SECONDS = 12 * 3600;
 const COOKIE = 'onestyle_admin';
@@ -124,6 +125,7 @@ export async function handleAdmin(request, env, ctx, url, path) {
 
   // Everything below needs a signed-in admin.
   if (!(await session(request, env))) throw new HttpError(401, 'signed-out');
+  if (path === 'telegram' || path.startsWith('telegram/')) return handleTelegram(request, env, path);
 
   if (path === 'password' && method === 'POST') {
     const body = await readJson(request, 2048);

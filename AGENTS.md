@@ -5,7 +5,7 @@ Read `ONESTYLE-CONTEXT.md` first (Arabic): what the site is, its status and the 
 ## What this repo is
 
 - The **source** of the live One Style site on Cloudflare (Workers + Static Assets + D1 + KV).
-- Since 20 Oct 2026 (Jafar's decision) it lives in the public repo `yallarideapp/onestyle`, which also serves the GitHub Pages preview. It moves to the shop's own repo (`onestyle-site`) once that account exists.
+- The live source lives in the owner's private repo `abdulelah217-dev/onestyle-site`. This public repo, `yallarideapp/onestyle`, keeps the GitHub Pages preview and explicitly requested source synchronizations. They do not sync automatically; Cloudflare deploys from the owner repo.
 - The Pages workflow (`.github/workflows/deploy.yml`) publishes only the storefront files (`index.html`, `app.js`, `admin.js`, `data.js`, `settings.js`, the CSS files, `assets/`). Keep that list explicit: never publish `worker/`, `tests/`, the guides or this file on Pages.
 - Pull and rebase before any change: Jafar, ChatGPT and Claude all push here.
 
@@ -20,6 +20,7 @@ Read `ONESTYLE-CONTEXT.md` first (Arabic): what the site is, its status and the 
   - It sets `window.OneStylePreviewAccounts`; `app.js` uses it through `acct` (header and menu link, `#/account` and `#/reset/` routes, checkout prefill, the order's `account`).
   - It does nothing on the live site or from disk (file://), and `tools/build.mjs` leaves it out of `dist/`. It borrows the account styles from `live.css`.
 - Server: `worker/src/*.js`; schema `migrations/*.sql`; config `wrangler.jsonc`.
+- Telegram: `worker/src/telegram.js` stores the bot connection in the private `telegram_settings` table. Never include its token in content, metadata responses, exports or logs. Order alerts run after the order commits and contain no customer contact details.
 - Generated, never edited and never committed: `dist/` and `worker/src/generated/shop-rules.js`. The latter is built from `data.js` + `settings.js` + `passwords.js`, so the server prices and cleans content with the storefront's own functions.
 
 ## Behaviour that must be kept
@@ -74,6 +75,7 @@ Read `ONESTYLE-CONTEXT.md` first (Arabic): what the site is, its status and the 
 npm test                 # no server: pricing parity, slugs, content cleaning
 npm run test:api         # orders + admin abuse tests on a fresh local Worker
 npm run test:accounts    # shopper accounts and reset links
+npm run test:telegram    # private bot settings and server alerts through a local stand-in
 npm run test:browser     # full flow in a browser (Playwright)
 npm run test:widths      # 320–1440 px, ar/en, no sideways scrolling
 npm run test:preview     # the Pages preview's demo accounts in a browser (Playwright)

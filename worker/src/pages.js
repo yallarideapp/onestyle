@@ -5,6 +5,7 @@
 import { escHtml as esc } from './util.js';
 import { getContent, cfg, indexable } from './content.js';
 import { siteUrl } from './mail.js';
+import { startupShell } from './startup.js';
 
 const PAGES = new Set(['shop', 'guide', 'service', 'compare', 'account', 'admin']);
 export const SECURITY_HEADERS = {
@@ -181,6 +182,6 @@ export async function renderPage(request, env, url) {
     .replace(/<title>[^<]*<\/title>/, () => head)
     .replace(/(<a class="skip-link" href="#main">)[^<]*(<\/a>)/, (_, a, b) => `${a}${lang === 'ar' ? 'تجاوز إلى المحتوى' : 'Skip to content'}${b}`)
     .replace(/<noscript>[^<]*<\/noscript>/, () => `<noscript>${lang === 'ar' ? 'لتصفّح الأجهزة والطلب، فعّل JavaScript.' : 'Turn on JavaScript to browse and order.'}</noscript>`)
-    .replace('<div id="app"></div>', () => `<div id="app">${page ? pageBody(page, published, lang) : ''}</div>`);
+    .replace(/<!--live-startup-->[\s\S]*?<!--\/live-startup-->/, () => startupShell(published.content.settings.brand, lang, page ? pageBody(page, published, lang) : `<p>${lang === 'ar' ? 'الصفحة غير موجودة.' : 'Page not found.'}</p>`));
   return html(doc, page ? 200 : 404);
 }
