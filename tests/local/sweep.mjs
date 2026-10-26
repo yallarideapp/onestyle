@@ -16,7 +16,7 @@ const shopper = await (await b.newContext()).newPage();
 await shopper.goto(`${BASE}/account`); await shopper.click('[data-live="tab"][data-tab="create"]');
 await shopper.fill('form[data-live-form="register"] input[name=name]', 'محمد الأحمد'); await shopper.fill('form[data-live-form="register"] input[name=email]', `w${Date.now()}@example.test`);
 await shopper.fill('form[data-live-form="register"] input[name=password]', 'sweep-long-password-1'); await shopper.fill('form[data-live-form="register"] input[name=repeat]', 'sweep-long-password-1');
-await shopper.click('form[data-live-form="register"] [type=submit]'); await shopper.waitForSelector('[data-live="logout"]');
+await shopper.check('form[data-live-form="register"] input[name=agree]'); await shopper.click('form[data-live-form="register"] [type=submit]'); await shopper.waitForSelector('[data-live="logout"]');
 const shopState = await shopper.context().storageState();
 const pages = [
   ['home', '/', null], ['shop', '/shop', null], ['device', '/devices/macbook-pro-14-m1-pro', null], ['category', '/iphone', null],

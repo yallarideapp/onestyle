@@ -80,6 +80,7 @@
     'weak-password': t('كلمة السر لازم تكون 8 خانات أو أكثر، وفيها حرف واحد على الأقل.', 'The password needs at least 8 characters, including at least one letter.'),
     'common-password': t('كلمة السر هاي مشهورة وسهل حدا يخمّنها. اختار غيرها.', 'That password is too common and easy to guess. Choose another one.'),
     'mismatch': t('كلمتين السر مش متطابقات.', 'The passwords do not match.'),
+    'need-consent': t('للمتابعة، وافق على الشروط والأحكام وسياسة الخصوصية.', 'To continue, agree to the Terms & Conditions and Privacy Policy.'),
     'email-in-use': t('الإيميل مستعمل. سجّل دخول أو استعمل إيميل ثاني.', 'That email is in use. Sign in or use another email.'),
     'bad-credentials': t('الإيميل أو كلمة السر غلط.', 'Wrong email or password.'),
     'bad-current': t('كلمة السر الحالية غلط.', 'The current password is wrong.'),
@@ -93,6 +94,7 @@
   // ---------- actions ----------
   async function register(f) {
     const name = cleanText(f.name, 80), email = cleanEmail(f.email), phoneText = cleanText(f.phone, 20), phone = phoneText ? cleanMobile(phoneText) : '';
+    if (f.agree !== 'on') throw code('need-consent');
     if (name.length < 2) throw code('bad-name');
     if (!email) throw code('bad-email');
     if (phone === null) throw code('bad-phone');
@@ -201,7 +203,7 @@
       const create = ui.tab === 'create';
       const tabs = `<div class="live-tabs" role="tablist"><button type="button" role="tab" aria-selected="${!create}" data-acct="tab" data-tab="signin">${t('تسجيل الدخول', 'Sign in')}</button><button type="button" role="tab" aria-selected="${create}" data-acct="tab" data-tab="create">${t('حساب جديد', 'Create account')}</button></div>`;
       const form = create
-        ? `<form data-acct-form="register" novalidate>${field(t('الاسم', 'Name'), 'name', { auto: 'name', min: 2, max: 80 })}${field(t('الإيميل', 'Email'), 'email', { type: 'email', auto: 'email', dir: 'ltr', max: 254 })}${field(t('رقم الموبايل (اختياري)', 'Mobile (optional)'), 'phone', { type: 'tel', auto: 'tel', dir: 'ltr', max: 20, required: false })}${field(t('كلمة السر (8 خانات أو أكثر وفيها حرف)', 'Password (8+ characters, with a letter)'), 'password', { type: 'password', auto: 'new-password', min: 8 })}${field(t('أعد كلمة السر', 'Repeat the password'), 'repeat', { type: 'password', auto: 'new-password', min: 8 })}${alerts()}<button class="button primary full" type="submit"${busy()}>${t('اعمل الحساب', 'Create the account')}</button></form>`
+        ? `<form data-acct-form="register" novalidate>${field(t('الاسم', 'Name'), 'name', { auto: 'name', min: 2, max: 80 })}${field(t('الإيميل', 'Email'), 'email', { type: 'email', auto: 'email', dir: 'ltr', max: 254 })}${field(t('رقم الموبايل (اختياري)', 'Mobile (optional)'), 'phone', { type: 'tel', auto: 'tel', dir: 'ltr', max: 20, required: false })}${field(t('كلمة السر (8 خانات أو أكثر وفيها حرف)', 'Password (8+ characters, with a letter)'), 'password', { type: 'password', auto: 'new-password', min: 8 })}${field(t('أعد كلمة السر', 'Repeat the password'), 'repeat', { type: 'password', auto: 'new-password', min: 8 })}<label class="live-consent"><input type="checkbox" name="agree" required><span>${t('أوافق على', 'I agree to the')} <a href="#/terms" target="_blank" rel="noopener">${t('الشروط والأحكام', 'Terms & Conditions')}</a> ${t('و', 'and ')}<a href="#/privacy" target="_blank" rel="noopener">${t('سياسة الخصوصية', 'Privacy Policy')}</a></span></label>${alerts()}<button class="button primary full" type="submit"${busy()}>${t('اعمل الحساب', 'Create the account')}</button></form>`
         : `<form data-acct-form="login" novalidate>${field(t('الإيميل', 'Email'), 'email', { type: 'email', auto: 'email', dir: 'ltr', max: 254 })}${field(t('كلمة السر', 'Password'), 'password', { type: 'password', auto: 'current-password' })}${alerts()}<button class="button primary full" type="submit"${busy()}>${t('ادخل', 'Sign in')}</button><button class="text-button" type="button" data-acct="tab" data-tab="forgot">${t('نسيت كلمة السر؟', 'Forgot your password?')}</button></form>`;
       return section(`${head}<div class="live-card">${tabs}${form}<p class="live-note">${t('الحساب بيحفظ طلباتك وبيعبّي اسمك ورقمك عند الطلب. بتقدر تطلب كضيف كمان.', 'An account keeps your orders and fills in your name and number at checkout. You can also order as a guest.')}</p>
         <button class="button full" type="button" data-acct="sample"${busy()}>${t('جرّب حساب العرض', 'Try the demo account')}</button>${demoNote()}</div>`);

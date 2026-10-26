@@ -173,6 +173,7 @@
   const errorText = (code) => ({
     'bad-name': t('اكتب اسمك (حرفين على الأقل).', 'Enter your name (at least 2 letters).'),
     'bad-phone': t('اكتب رقم موبايل أردني صحيح، مثل 0791234567.', 'Enter a valid Jordanian mobile number, like 0791234567.'),
+    'need-consent': t('للمتابعة، وافق على الشروط والأحكام وسياسة الخصوصية.', 'To continue, agree to the Terms & Conditions and Privacy Policy.'),
     'bad-city': t('اختار المدينة.', 'Choose a city.'),
     'bad-address': t('اكتب عنوان التوصيل.', 'Enter the delivery address.'),
     'price-changed': t('تغيّر سعر بالسلة. راجع السلة وجرّب مرة ثانية.', 'A price in your bag changed. Check your bag and try again.'),
@@ -461,7 +462,7 @@
   // English pages sit at /shop, /mac, /devices/<slug>; Arabic ones under /ar. The admin and
   // reset links stay on the home address after a # (a reset token never reaches the server).
   const HASH_ONLY = /^#\/(admin|reset\/|admin-reset\/)/;
-  const FIXED = ['shop', 'guide', 'service', 'compare', 'account'];
+  const FIXED = ['shop', 'guide', 'service', 'compare', 'account', 'privacy', 'terms'];
   const isArPath = (p) => p === '/ar' || p.startsWith('/ar/');
   const decode = (p) => { try { return decodeURIComponent(p); } catch { return p; } };
   let slugMap = {};
@@ -605,7 +606,7 @@
       const create = shopper.tab === 'create';
       const tabs = `<div class="live-tabs" role="tablist"><button type="button" role="tab" aria-selected="${!create}" data-live="tab" data-tab="signin">${t('تسجيل الدخول', 'Sign in')}</button><button type="button" role="tab" aria-selected="${create}" data-live="tab" data-tab="create">${t('حساب جديد', 'Create account')}</button></div>`;
       const form = create
-        ? `<form data-live-form="register">${field(t('الاسم', 'Name'), 'name', { auto: 'name', min: 2, max: 80 })}${field(t('الإيميل', 'Email'), 'email', { type: 'email', auto: 'email', dir: 'ltr', max: 254 })}${field(t('رقم الموبايل (اختياري)', 'Mobile (optional)'), 'phone', { type: 'tel', auto: 'tel', dir: 'ltr', max: 20, required: false })}${field(t('كلمة السر (8 خانات أو أكثر وفيها حرف)', 'Password (8+ characters, with a letter)'), 'password', { type: 'password', auto: 'new-password', min: 8 })}${field(t('أعد كلمة السر', 'Repeat the password'), 'repeat', { type: 'password', auto: 'new-password', min: 8 })}${alerts(shopper)}<button class="button primary full" type="submit">${t('أنشئ الحساب', 'Create account')}</button></form>`
+        ? `<form data-live-form="register">${field(t('الاسم', 'Name'), 'name', { auto: 'name', min: 2, max: 80 })}${field(t('الإيميل', 'Email'), 'email', { type: 'email', auto: 'email', dir: 'ltr', max: 254 })}${field(t('رقم الموبايل (اختياري)', 'Mobile (optional)'), 'phone', { type: 'tel', auto: 'tel', dir: 'ltr', max: 20, required: false })}${field(t('كلمة السر (8 خانات أو أكثر وفيها حرف)', 'Password (8+ characters, with a letter)'), 'password', { type: 'password', auto: 'new-password', min: 8 })}${field(t('أعد كلمة السر', 'Repeat the password'), 'repeat', { type: 'password', auto: 'new-password', min: 8 })}<label class="live-consent"><input type="checkbox" name="agree" required><span>${t('أوافق على', 'I agree to the')} <a href="#/terms" target="_blank" rel="noopener">${t('الشروط والأحكام', 'Terms & Conditions')}</a> ${t('و', 'and ')}<a href="#/privacy" target="_blank" rel="noopener">${t('سياسة الخصوصية', 'Privacy Policy')}</a></span></label>${alerts(shopper)}<button class="button primary full" type="submit">${t('أنشئ الحساب', 'Create account')}</button></form>`
         : `<form data-live-form="login">${field(t('الإيميل', 'Email'), 'email', { type: 'email', auto: 'email', dir: 'ltr', max: 254 })}${field(t('كلمة السر', 'Password'), 'password', { type: 'password', auto: 'current-password' })}${alerts(shopper)}<button class="button primary full" type="submit">${t('ادخل', 'Sign in')}</button>${shopper.resetAvailable ? `<button class="text-button" type="button" data-live="tab" data-tab="forgot">${t('نسيت كلمة السر؟', 'Forgot your password?')}</button>` : ''}</form>`;
       return `<section class="section-width live-account">${head}<div class="live-card">${tabs}${form}<p class="live-note">${t('الحساب بيحفظ طلباتك وبيعبّي اسمك ورقمك عند الطلب. بتقدر تطلب كضيف كمان.', 'An account keeps your orders and fills in your name and number at checkout. You can also order as a guest.')}</p></div></section>`;
     }
@@ -713,6 +714,7 @@
       <label class="live-address"${pickup ? ' hidden' : ''}>${t('العنوان', 'Address')}<textarea name="address" maxlength="300" rows="2" autocomplete="street-address" placeholder="${t('المنطقة، الشارع، أقرب معلم', 'Area, street, nearest landmark')}">${esc(value('address'))}</textarea></label>
       <label>${t('ملاحظات (اختياري)', 'Notes (optional)')}<textarea name="notes" maxlength="300" rows="2"></textarea></label>
       <label class="live-hp" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
+      <label class="live-consent"><input type="checkbox" name="agree" required><span>${t('أوافق على', 'I agree to the')} <a href="#/terms" target="_blank" rel="noopener">${t('الشروط والأحكام', 'Terms & Conditions')}</a> ${t('و', 'and ')}<a href="#/privacy" target="_blank" rel="noopener">${t('سياسة الخصوصية', 'Privacy Policy')}</a></span></label>
       <div class="checkout-totals"><div><span>${t('المجموع الفرعي', 'Subtotal')}</span><strong>${app.money(priced.subtotalFils / 1000)}</strong></div><div><span>${t('التوصيل', 'Delivery')}</span><strong id="live-shipping">${app.shipLabel(shippingFils / 1000)}</strong></div><div class="grand-total"><span>${t('الإجمالي', 'Total')}</span><strong id="live-total">${app.money((priced.subtotalFils + shippingFils) / 1000)}</strong></div></div>
       <p class="modal-note">${t('بنستعمل اسمك ورقمك وعنوانك بس لتأكيد الطلب وتوصيله.', 'We use your name, number and address only to confirm and deliver your order.')}</p>
       <button class="button primary full" type="submit">${t('أرسل الطلب', 'Place order')}</button><button class="text-button full" type="button" data-action="bag">${t('ارجع للسلة', 'Back to bag')}</button></form>`, 'drawer');
@@ -741,6 +743,7 @@
     if (Array.from(draft.name).length < 2) return show('bad-name');
     if (!/^(\+?962|0)?7[789]\d{7}$/.test(draft.phone.replace(/[\s()-]/g, '').replace(/^00/, '+'))) return show('bad-phone');
     if (fulfilment === 'delivery' && draft.address.length < 4) return show('bad-address');
+    if (!form.elements.namedItem('agree')?.checked) return show('need-consent');
     const priced = priceBag();
     if (!priced.lines.length) { app.closeModal(); app.openBag(); return; }
     const shippingFils = Math.round(cfg.deliveryFee(app.state().settings, fulfilment, city) * 1000);
@@ -776,13 +779,13 @@
     const state = kind.startsWith('admin') ? admin : shopper;
     state.error = ''; state.message = ''; state.lastForm = kind;
     // After an error the page is drawn again: keep what was typed (never passwords) and show the message.
-    const typed = [...form.elements].filter((el) => el.name && 'value' in el && !/^(password|submit|button|hidden|file)$/.test(el.type)).map((el) => [el.name, el.value]);
+    const typed = [...form.elements].filter((el) => el.name && 'value' in el && !/^(password|submit|button|hidden|file)$/.test(el.type)).map((el) => [el.name, el.type === 'checkbox' ? el.checked : el.value]);
     const redraw = () => {
       app.render();
       const next = document.querySelector(`form[data-live-form="${kind}"]`);
       if (!state.error) { const done = next && next.querySelector('.live-success'); if (done) done.scrollIntoView({ block: 'center' }); return; }
       if (!next) return;
-      for (const [name, value] of typed) { const el = next.elements.namedItem(name); if (el && 'value' in el && !el.value) el.value = value; }
+      for (const [name, value] of typed) { const el = next.elements.namedItem(name); if (!el || !('value' in el)) continue; if (el.type === 'checkbox') el.checked = value === true; else if (!el.value) el.value = value; }
       const box = next.querySelector('.live-alert') || document.querySelector('.live-alert');
       if (box) box.scrollIntoView({ block: 'nearest' });
       const first = next.querySelector('input[type=password]'); if (first) first.focus({ preventScroll: true });
@@ -792,7 +795,7 @@
     try {
       if (kind === 'checkout') { if (button) button.disabled = false; return submitCheckout(form); }
       if (kind === 'login') { setShopper({ ...(await request('/api/customer/login', { method: 'POST', body: { email: v('email'), password: v('password') } })), signedIn: true, resetAvailable: shopper.resetAvailable }); shopper.orders = null; }
-      else if (kind === 'register') { if (!repeatOk()) return; const res = await request('/api/customer/register', { method: 'POST', body: { name: v('name'), email: v('email'), phone: v('phone'), password: v('password') } }); setShopper({ signedIn: true, customer: res.customer, resetAvailable: shopper.resetAvailable }); shopper.orders = []; }
+      else if (kind === 'register') { if (!form.elements.namedItem('agree')?.checked) { state.error = errorText('need-consent'); redraw(); return; } if (!repeatOk()) return; const res = await request('/api/customer/register', { method: 'POST', body: { name: v('name'), email: v('email'), phone: v('phone'), password: v('password') } }); setShopper({ signedIn: true, customer: res.customer, resetAvailable: shopper.resetAvailable }); shopper.orders = []; }
       else if (kind === 'profile') { const res = await request('/api/customer/profile', { method: 'PATCH', body: { name: v('name'), phone: v('phone') } }); shopper.customer = res.customer; shopper.message = t('انحفظت بياناتك.', 'Your details were saved.'); }
       else if (kind === 'password') { if (!repeatOk()) return; await request('/api/customer/password', { method: 'POST', body: { current: v('current'), password: v('password') } }); shopper.message = t('تغيّرت كلمة السر. الأجهزة الثانية طلعت من حسابك.', 'Password changed. Other devices were signed out.'); }
       else if (kind === 'forgot') { await request('/api/customer/forgot', { method: 'POST', body: { email: v('email'), lang: lang() } }); shopper.message = t('إذا الإيميل إله حساب، وصلك رابط خلال دقائق. شيك على البريد غير المرغوب كمان.', 'If the email has an account, a link is on its way. Check your spam folder too.'); }

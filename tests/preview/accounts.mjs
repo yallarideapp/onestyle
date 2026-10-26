@@ -22,13 +22,13 @@ ok(/تسجيل الدخول|Sign in/.test(await text('.live-account h1')), 'acco
 await p.click('[data-acct="tab"][data-tab="create"]');
 const reg = 'form[data-acct-form="register"]';
 await p.fill(`${reg} [name=name]`, 'جعفر'); await p.fill(`${reg} [name=email]`, 'Jafar.Test@Example.com'); await p.fill(`${reg} [name=phone]`, '٠٧٩١٢٣٤٥٦٧');
-await p.fill(`${reg} [name=password]`, 'abc1234'); await p.fill(`${reg} [name=repeat]`, 'abc1234'); await p.click(`${reg} [type=submit]`); await p.waitForTimeout(400);
+await p.fill(`${reg} [name=password]`, 'abc1234'); await p.fill(`${reg} [name=repeat]`, 'abc1234'); await p.check(`${reg} [name=agree]`); await p.click(`${reg} [type=submit]`); await p.waitForTimeout(400);
 ok(/8/.test(await text('.live-alert')), 'a 7-character password is refused');
-await p.fill(`${reg} [name=password]`, '12345678'); await p.fill(`${reg} [name=repeat]`, '12345678'); await p.click(`${reg} [type=submit]`); await p.waitForTimeout(400);
+await p.fill(`${reg} [name=password]`, '12345678'); await p.fill(`${reg} [name=repeat]`, '12345678'); await p.check(`${reg} [name=agree]`); await p.click(`${reg} [type=submit]`); await p.waitForTimeout(400);
 ok(/حرف|letter/.test(await text('.live-alert')), 'digits only are refused');
-await p.fill(`${reg} [name=password]`, 'Password1'); await p.fill(`${reg} [name=repeat]`, 'Password1'); await p.click(`${reg} [type=submit]`); await p.waitForTimeout(400);
+await p.fill(`${reg} [name=password]`, 'Password1'); await p.fill(`${reg} [name=repeat]`, 'Password1'); await p.check(`${reg} [name=agree]`); await p.click(`${reg} [type=submit]`); await p.waitForTimeout(400);
 ok(/مشهورة|common/.test(await text('.live-alert')), 'a common password is refused');
-await p.fill(`${reg} [name=password]`, 'onestyle-preview-pass-1'); await p.fill(`${reg} [name=repeat]`, 'onestyle-preview-pass-1'); await p.click(`${reg} [type=submit]`);
+await p.fill(`${reg} [name=password]`, 'onestyle-preview-pass-1'); await p.fill(`${reg} [name=repeat]`, 'onestyle-preview-pass-1'); await p.check(`${reg} [name=agree]`); await p.click(`${reg} [type=submit]`);
 await p.waitForSelector('form[data-acct-form="profile"]');
 ok((await text('.live-account .live-note[dir=ltr]')) === 'jafar.test@example.com', 'account made; email kept in lower case');
 ok(await p.inputValue('form[data-acct-form="profile"] [name=phone]') === '0791234567', 'Arabic digits become 0791234567');
@@ -37,7 +37,7 @@ await p.screenshot({ path: `${OUT}/preview-account.png` });
 await p.click('[data-acct="logout"]'); await p.waitForSelector('[data-acct="tab"]');
 await p.click('[data-acct="tab"][data-tab="create"]');
 await p.fill(`${reg} [name=name]`, 'Other'); await p.fill(`${reg} [name=email]`, 'JAFAR.test@example.com');
-await p.fill(`${reg} [name=password]`, 'another-preview-pass-2'); await p.fill(`${reg} [name=repeat]`, 'another-preview-pass-2'); await p.click(`${reg} [type=submit]`); await p.waitForTimeout(600);
+await p.fill(`${reg} [name=password]`, 'another-preview-pass-2'); await p.fill(`${reg} [name=repeat]`, 'another-preview-pass-2'); await p.check(`${reg} [name=agree]`); await p.click(`${reg} [type=submit]`); await p.waitForTimeout(600);
 ok(/مستعمل|in use/.test(await text('.live-alert')), 'the same email in another case is refused');
 // sign in: wrong then right
 await p.click('[data-acct="tab"][data-tab="signin"]');

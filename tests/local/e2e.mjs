@@ -92,6 +92,11 @@ await shop.click('[data-live="tab"][data-tab="create"]');
 const email = `shopper.${Date.now()}@example.test`;
 await shop.fill('form[data-live-form="register"] input[name=name]', 'Test Shopper'); await shop.fill('form[data-live-form="register"] input[name=email]', email);
 await shop.fill('form[data-live-form="register"] input[name=phone]', '٠٧٩١٢٣٤٥٦٧'); await shop.fill('form[data-live-form="register"] input[name=password]', 'shopper-long-password-1'); await shop.fill('form[data-live-form="register"] input[name=repeat]', 'shopper-long-password-1');
+await shop.click('form[data-live-form="register"] [type=submit]'); await shop.waitForTimeout(800);
+ok(await shop.locator('[data-live="logout"]').count() === 0 && await shop.locator('form[data-live-form="register"] input[name=agree]').evaluate((el) => !el.validity.valid), 'sign-up without agreeing to the terms is refused');
+ok(await shop.locator('form[data-live-form="register"] input[name=email]').inputValue() === email, 'the typed email stays after that error');
+await shop.fill('form[data-live-form="register"] input[name=password]', 'shopper-long-password-1'); await shop.fill('form[data-live-form="register"] input[name=repeat]', 'shopper-long-password-1');
+await shop.check('form[data-live-form="register"] input[name=agree]');
 await shop.click('form[data-live-form="register"] [type=submit]'); await shop.waitForSelector('[data-live="logout"]');
 ok(true, 'shopper creates an account (Arabic digits in the mobile accepted)');
 // checkout
@@ -102,6 +107,9 @@ await shop.fill('form[data-live-form="checkout"] textarea[name=address]', 'Garde
 await shop.selectOption('form[data-live-form="checkout"] select[name=city]', 'Other');
 const total = (await shop.locator('#live-total').innerText()).trim();
 await shop.waitForTimeout(3100);
+await shop.click('form[data-live-form="checkout"] [type=submit]'); await shop.waitForSelector('#live-checkout-alert:not([hidden])');
+ok(/Terms|الشروط/.test(await shop.locator('#live-checkout-alert').textContent()), 'checkout without agreeing to the terms is refused');
+await shop.check('form[data-live-form="checkout"] input[name=agree]');
 await shop.click('form[data-live-form="checkout"] [type=submit]');
 await shop.waitForSelector('.order-success code', { timeout: 10000 });
 const number = (await shop.locator('.order-success code').innerText()).trim();

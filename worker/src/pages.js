@@ -6,8 +6,9 @@ import { escHtml as esc } from './util.js';
 import { getContent, cfg, indexable } from './content.js';
 import { siteUrl } from './mail.js';
 import { startupShell } from './startup.js';
+import { legal } from './generated/shop-rules.js';
 
-const PAGES = new Set(['shop', 'guide', 'service', 'compare', 'account', 'admin']);
+const PAGES = new Set(['shop', 'guide', 'service', 'compare', 'account', 'admin', 'privacy', 'terms']);
 export const SECURITY_HEADERS = {
   'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
   'X-Content-Type-Options': 'nosniff',
@@ -86,6 +87,7 @@ function pageBody(page, published, lang) {
     return `<main class="seo-page"><p><a href="${esc(pathFor(lang, '/'))}">${esc(brand)}</a></p><h1>${esc(p.name)}${p.chip ? ` · ${esc(p.chip)}` : ''}</h1><p>${esc(ar ? p.descriptionAr : p.descriptionEn)}</p><ul>${specs.map((s) => `<li>${esc(s)}</li>`).join('')}</ul><p>${esc(priceText(cfg.startPrice(p)))}</p></main>`;
   }
   if (page.kind === 'category') return `<main class="seo-page"><h1>${esc(ar ? page.category.labelAr : page.category.labelEn)} — ${esc(brand)}</h1>${list(page.products)}</main>`;
+  if (page.kind === 'privacy' || page.kind === 'terms') return `<main class="seo-page legal-doc">${legal.html(page.kind, lang, settings.brand, (k) => pathFor(lang, `/${k}`))}</main>`;
   if (page.kind === 'shop') return `<main class="seo-page"><h1>${esc(textOf(settings.pageTitles, 'shop', lang) || brand)}</h1>${list(visible)}</main>`;
   if (page.kind === 'home') {
     const cats = cfg.categoryList(settings).filter((c) => visible.some((p) => p.category === c.id));
@@ -116,6 +118,10 @@ function pageHead(page, published, lang, origin, rest, robots) {
     description = page.products.map((p) => p.name).slice(0, 8).join(' · ') || description;
   } else if (page.kind === 'shop') {
     title = `${textOf(settings.pageTitles, 'shop', lang)} — ${brand}`;
+  } else if (page.kind === 'privacy' || page.kind === 'terms') {
+    title = `${legal.title(page.kind, lang)} — ${brand}`;
+    description = legal.intro(page.kind, lang).replace(/\{shop\}/g, brand);
+    jsonld = { '@context': 'https://schema.org', '@type': 'WebPage', name: title, url: `${origin}${pathFor(lang, `/${page.kind}`)}`, dateModified: legal.updated, inLanguage: ar ? 'ar' : 'en' };
   } else if (['guide', 'service', 'compare', 'account', 'admin'].includes(page.kind)) {
     title = `${brand} — ${textOf(settings.pageTitles, page.kind, lang) || ({ guide: ar ? 'اختَر جهازك' : 'Find your Mac', service: ar ? 'الصيانة والدعم' : 'Service & support', compare: ar ? 'قارن' : 'Compare', account: ar ? 'حسابي' : 'My account', admin: ar ? 'لوحة الإدارة' : 'Admin' }[page.kind])}`;
   }
@@ -155,7 +161,7 @@ export async function renderPage(request, env, url) {
     if (!open) return text('Not found', 'text/plain', 404);
     const { settings, catalog, slugs = {} } = published.content;
     const visible = catalog.filter((p) => !p.hidden);
-    const rests = ['/', '/shop', ...cfg.categoryList(settings).filter((c) => visible.some((p) => p.category === c.id)).map((c) => `/${c.id}`), ...visible.map((p) => `/devices/${slugs[p.id]?.slug || p.id}`)];
+    const rests = ['/', '/shop', '/privacy', '/terms', ...cfg.categoryList(settings).filter((c) => visible.some((p) => p.category === c.id)).map((c) => `/${c.id}`), ...visible.map((p) => `/devices/${slugs[p.id]?.slug || p.id}`)];
     const entry = (rest) => { const en = `${origin}${rest}`; const ar = `${origin}/ar${rest === '/' ? '' : rest}`; const alt = `<xhtml:link rel="alternate" hreflang="en" href="${esc(en)}"/><xhtml:link rel="alternate" hreflang="ar" href="${esc(ar)}"/>`; return `<url><loc>${esc(en)}</loc>${alt}</url><url><loc>${esc(ar)}</loc>${alt}</url>`; };
     return text(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">${rests.map(entry).join('')}</urlset>\n`, 'application/xml');
   }

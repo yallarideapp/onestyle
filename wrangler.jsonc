@@ -10,7 +10,7 @@
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
     "run_worker_first": [
-      "/api/*", "/", "/ar", "/ar/*", "/shop", "/devices/*", "/guide", "/service", "/compare", "/account", "/admin", "/admin/*",
+      "/api/*", "/", "/ar", "/ar/*", "/shop", "/devices/*", "/guide", "/service", "/compare", "/account", "/privacy", "/terms", "/admin", "/admin/*",
       "/mac", "/iphone", "/ipad", "/audio", "/watch", "/accessories", "/used-like-new", "/custom-*", "/sitemap.xml", "/robots.txt"
     ]
   },
