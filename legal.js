@@ -2,7 +2,7 @@
    One source for the storefront (app.js) and the live Worker's search-engine pages (pages.js).
    {shop}, {phone} and {address} are filled in from the shop's settings. Edit the text here only. */
 (function () {
-  const UPDATED = '2026-10-26';
+  const UPDATED = '2026-10-27';
 
   const privacy = {
     title: ['سياسة الخصوصية', 'Privacy Policy'],
@@ -21,8 +21,8 @@
             'When you create an account: your name, email, mobile number (optional) and password. The password is stored only as a one-way hash, so nobody, including us, can read it.'],
           ['عند الطلب: الاسم، رقم الموبايل، طريقة الاستلام، المدينة والعنوان عند التوصيل، الملاحظات، الأجهزة المطلوبة وأسعارها، وحالة الطلب.',
             'When you order: your name, mobile number, delivery or collection choice, city and address for delivery, notes, the devices you ordered with their prices, and the order status.'],
-          ['بيانات تقنية لحماية الموقع: نحفظ بصمة مشفّرة لعنوان اتصالك (IP) لمنع الإساءة والطلبات الوهمية، وتُحذف خلال يوم تقريبًا. قد يعالج مزوّد الاستضافة بيانات الطلبات التقنية المعتادة لأغراض الأمان.',
-            'Technical data that protects the site: a hashed form of your connection (IP) address, used to stop abuse and fake orders, deleted within about a day. Our hosting provider may process standard request data for security.'],
+          ['بيانات تقنية لحماية الموقع: نحفظ بصمة مشفّرة لعنوان اتصالك (IP) لمنع الإساءة والطلبات الوهمية. تعتمد حدود الاستخدام على نوافذ زمنية تصل إلى يوم، وتُحذف السجلات الأقدم أثناء التنظيف الدوري. قد يعالج مزوّد الاستضافة بيانات الطلبات التقنية المعتادة لأغراض الأمان.',
+            'Technical data that protects the site: a hashed form of your connection (IP) address, used to stop abuse and fake orders. Rate limits use windows of up to a day; older records are removed during periodic cleanup. Our hosting provider may process standard request data for security.'],
           ['على جهازك: يحفظ المتصفح لغتك، سلة المشتريات، المقارنة، ومسودة بيانات الطلب، وملف تعريف ارتباط (cookie) لتسجيل الدخول فقط عندما تكون مسجّلًا. لا نستخدم أدوات إعلانات أو تتبّع أو تحليلات.',
             'On your device: your browser keeps your language, bag, comparison and a checkout draft, plus a sign-in cookie only while you are signed in. We use no advertising, tracking or analytics tools.'],
           ['إذا تواصلت معنا عبر واتساب أو الهاتف أو إنستغرام، فإن ما ترسله يخضع أيضًا لسياسات تلك الخدمات.',
@@ -48,7 +48,7 @@
           ['فريق المحل المخوّل فقط، من خلال لوحة إدارة محمية بكلمة سر.', 'Authorised shop staff only, through a password-protected admin panel.'],
           ['مندوب التوصيل: الاسم ورقم الموبايل والعنوان فقط، لتسليم طلبك.', 'The delivery driver: only your name, mobile number and address, to hand over your order.'],
           ['Cloudflare: استضافة الموقع وقاعدة البيانات.', 'Cloudflare: hosts the website and its database.'],
-          ['Resend: إرسال رسائل البريد مثل إعادة تعيين كلمة السر (يستلم بريدك الإلكتروني فقط).', 'Resend: sends emails such as password resets (receives your email address only).'],
+          ['Resend: يرسل رسائل إعادة تعيين كلمة السر وتنبيهات الطلبات للمحل عند تفعيل البريد. يعالج عناوين البريد ومحتوى الرسائل؛ وقد تتضمن تنبيهات الطلبات اسمك ورقمك وعنوان التوصيل وملاحظاتك وتفاصيل الطلب. لا نرسل كلمة سرك.', 'Resend: sends password-reset emails and order alerts to the shop when email is enabled. It processes email addresses and message contents; order alerts may include your name, phone number, delivery address, notes and order details. We never send your password.'],
           ['Telegram: تصل للمحل تنبيهات بالطلبات الجديدة تحتوي رقم الطلب والأجهزة والمجموع فقط، دون اسمك أو رقمك أو عنوانك.', 'Telegram: the shop receives new-order alerts with the order number, devices and total only, never your name, number or address.'],
           ['الجهات الرسمية، فقط عندما يفرض القانون ذلك.', 'Authorities, only when the law requires it.'],
         ] },
@@ -61,7 +61,7 @@
           ['الطلبات: طالما احتجنا إليها لخدمتك وللضمان والسجلات التي يتطلبها القانون.', 'Orders: as long as needed to serve you, for warranty, and for records the law requires.'],
           ['رابط إعادة تعيين كلمة السر: ينتهي خلال 30 دقيقة ويعمل مرة واحدة.', 'Password-reset links: expire after 30 minutes and work once.'],
           ['جلسة الدخول: تنتهي عند تسجيل الخروج أو بعد انتهاء مدتها.', 'Sign-in sessions: end when you sign out or when they expire.'],
-          ['سجلات الحماية من الإساءة: نحو يوم واحد.', 'Abuse-protection records: about one day.'],
+          ['سجلات الحماية من الإساءة: تستخدمها الحدود لنوافذ تصل إلى يوم، وتُحذف السجلات الأقدم أثناء التنظيف الدوري.', 'Abuse-protection records: used for rate-limit windows of up to a day, with older records removed during periodic cleanup.'],
         ] },
       ] },
       { h: ['حماية بياناتك', 'How we protect it'], body: [

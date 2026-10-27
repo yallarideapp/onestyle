@@ -6,12 +6,12 @@ Read `ONESTYLE-CONTEXT.md` first (Arabic): what the site is, its status and the 
 
 - The **source** of the live One Style site on Cloudflare (Workers + Static Assets + D1 + KV).
 - The live source lives in the owner's private repo `abdulelah217-dev/onestyle-site`. This public repo, `yallarideapp/onestyle`, keeps the GitHub Pages preview and explicitly requested source synchronizations. They do not sync automatically; Cloudflare deploys from the owner repo.
-- The Pages workflow (`.github/workflows/deploy.yml`) publishes only the storefront files (`index.html`, `app.js`, `admin.js`, `data.js`, `settings.js`, the CSS files, `assets/`). Keep that list explicit: never publish `worker/`, `tests/`, the guides or this file on Pages.
+- The Pages workflow (`.github/workflows/deploy.yml`) publishes only the storefront files (`index.html`, `app.js`, `admin.js`, `legal.js`, `data.js`, `settings.js`, the CSS files, `assets/`). Keep that list explicit: never publish `worker/`, `tests/`, the guides or this file on Pages.
 - Pull and rebase before any change: Jafar, ChatGPT and Claude all push here.
 
 ## Layout
 
-- Storefront (shared with the preview): `index.html`, `app.js`, `admin.js`, `data.js`, `settings.js`, `styles.css`, `admin.css`, `customization.css`, `assets/`.
+- Storefront (shared with the preview): `index.html`, `app.js`, `admin.js`, `legal.js`, `data.js`, `settings.js`, `styles.css`, `admin.css`, `customization.css`, `assets/`.
   - Opened from disk, these still run as the browser-only preview. Keep that working.
 - Live layer: `live.js` and `live.css`.
   - `tools/build.mjs` adds them to `dist/` only.

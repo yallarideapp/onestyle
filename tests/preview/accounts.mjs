@@ -53,7 +53,9 @@ await p.evaluate(() => document.querySelector('[data-action="checkout"]') || doc
 await p.waitForSelector('[data-action="checkout"]'); await p.click('[data-action="checkout"]'); await p.waitForSelector('#checkout-form');
 ok(await p.inputValue('#checkout-form [name=name]') === 'جعفر' && await p.inputValue('#checkout-form [name=phone]') === '0791234567', 'checkout fills in the account name and mobile');
 ok(/داخل باسم|Signed in as/.test(await text('#checkout-form .modal-note')), 'checkout says who is signed in');
-await p.click('#checkout-form [type=submit]'); await p.waitForSelector('.order-success code');
+await p.click('#checkout-form [type=submit]');
+ok(await p.locator('.order-success').count() === 0 && await p.locator('#checkout-form [name=agree]').evaluate((el) => el.validity.valueMissing), 'preview checkout without agreeing is refused');
+await p.check('#checkout-form [name=agree]'); await p.click('#checkout-form [type=submit]'); await p.waitForSelector('.order-success code');
 const orderId = await text('.order-success code');
 await go('#/account'); await p.waitForSelector('.live-orders');
 ok((await text('.live-orders strong')) === orderId && /جديد|New/.test(await text('.live-status')), `the order ${orderId} shows in My orders as New`);
@@ -99,7 +101,7 @@ await go('#/account'); if (await p.locator('[data-acct="logout"]').count()) { aw
 await go(`#/product/${productId}`); await p.click('.add-button'); await p.waitForTimeout(300);
 await p.evaluate(() => document.querySelector('[data-action="bag"]').click()); await p.waitForSelector('[data-action="checkout"]'); await p.click('[data-action="checkout"]'); await p.waitForSelector('#checkout-form');
 ok(/سجّل الدخول|Sign in to keep/.test(await text('#checkout-form .modal-note')), 'signed out: checkout offers sign in or guest');
-await p.click('#checkout-form [type=submit]'); await p.waitForSelector('.order-success code'); const guestId = await text('.order-success code');
+await p.check('#checkout-form [name=agree]'); await p.click('#checkout-form [type=submit]'); await p.waitForSelector('.order-success code'); const guestId = await text('.order-success code');
 await go(`#/admin/order/${encodeURIComponent(guestId)}`); await p.waitForSelector('[data-admin-order-form]');
 ok(/ضيف|Guest/.test(await text('.admin-customer')), 'admin shows a guest order as guest');
 await go('#/account'); await p.click('[data-acct="sample"]'); await p.waitForSelector('form[data-acct-form="profile"]');
