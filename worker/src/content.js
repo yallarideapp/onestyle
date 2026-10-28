@@ -88,4 +88,9 @@ export function sanitizeContent(input, previousSlugs = {}) {
 }
 
 // The site shows up on Google once the shop has published its content and turned ordering on.
-export const indexable = (published) => !published.fromSeed && published.content.settings?.checkout?.ordersOn === true;
+// Google may see the shop once the owner has saved real content and turned on either switch:
+// "Show on Google" (searchOn) alone, or website orders, which always show the shop too.
+export const indexable = (published) => {
+  const checkout = published.content.settings?.checkout || {};
+  return !published.fromSeed && (checkout.ordersOn === true || checkout.searchOn === true);
+};

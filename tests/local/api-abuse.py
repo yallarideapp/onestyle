@@ -62,6 +62,12 @@ s, j, _, _ = req('POST', '/api/admin/setup', {'code': CODE, 'password': 'another
 # ---------- publishing ----------
 s, j, _, _ = req('GET', '/api/admin/content', headers=A); base = j['version']; content = j['content']
 check('admin content carries address history', 'slugs' in content and content['slugs']['macbook-pro-14-m1']['slug'] == 'macbook-pro-14-m1-pro', content.get('slugs', {}).get('macbook-pro-14-m1'))
+search = json.loads(json.dumps(content)); search['settings']['checkout']['searchOn'] = True
+s, j, _, _ = req('PUT', '/api/admin/content', {'baseVersion': base, 'content': search}, A); check('turn on Show on Google with orders still off', s == 200 and j['content']['settings']['checkout']['searchOn'] is True and j['content']['settings']['checkout']['ordersOn'] is False, (s, j and j.get('error')))
+base = j['version']; content = j['content']
+s, j, h, t = req('GET', '/robots.txt'); check('Show on Google alone opens robots.txt', 'Disallow: /admin' in t and 'Disallow: /\n' not in t, t)
+s, j, h, t = req('GET', '/sitemap.xml'); check('Show on Google alone serves the sitemap', s == 200 and '/privacy' in t, s)
+s, j, _, _ = req('POST', '/api/order', {}); check('orders stay refused while only Show on Google is on', s == 403 and j.get('error') == 'orders-off', (s, j))
 on = json.loads(json.dumps(content)); on['settings']['checkout']['ordersOn'] = True
 s, j, _, _ = req('PUT', '/api/admin/content', {'baseVersion': base, 'content': on}, A); check('turn ordering on', s == 200 and j['content']['settings']['checkout']['ordersOn'] is True, (s, j and j.get('error')))
 ver = j['version']; content = j['content']

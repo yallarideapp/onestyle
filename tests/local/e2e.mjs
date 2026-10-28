@@ -36,6 +36,7 @@ ok(await admin.locator('[data-live="admin-logout"]').count() === 1, 'admin shows
 await admin.goto(`${BASE}/#/admin/settings`); await admin.waitForSelector('form[data-admin-settings-form="checkout"]', { state: 'attached' });
 await admin.evaluate(() => { const d = document.querySelector('form[data-admin-settings-form="checkout"]').closest('details'); if (d) d.open = true; });
 ok(!(await admin.locator('input[name=ordersOn]').isChecked()), 'ordering starts off');
+ok(await admin.locator('input[name=searchOn]').count() === 1 && !(await admin.locator('input[name=searchOn]').isChecked()), 'Show on Google switch is there and starts off');
 await admin.check('input[name=ordersOn]'); await admin.click('form[data-admin-settings-form="checkout"] [type=submit]');
 await toastSaved(admin); ok(true, 'ordering switched on and published');
 // price + photo on the first MacBook

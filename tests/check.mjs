@@ -28,6 +28,15 @@ test('ordering is off until the owner turns it on', () => {
   assert.equal(indexable({ fromSeed: false, content: on }), true);
 });
 
+test('"Show on Google" opens search without turning on orders', () => {
+  assert.equal(settings.checkout.searchOn, false);
+  const search = cfg.clone(content); search.settings.checkout.searchOn = true;
+  assert.equal(search.settings.checkout.ordersOn, false);
+  assert.equal(indexable({ fromSeed: false, content: search }), true);
+  assert.equal(indexable({ fromSeed: true, content: search }), false);
+  assert.deepEqual(sanitizeContent(search).settings.checkout, search.settings.checkout);
+});
+
 test('every device and every choice is priced the same as the storefront', () => {
   let lines = 0;
   for (const p of catalog.filter((x) => !x.hidden && x.availability !== 'unavailable')) {
